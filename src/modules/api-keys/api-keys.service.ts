@@ -1,0 +1,140 @@
+import { Injectable, ForbiddenException, NotFoundException, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { randomBytes, createHash } from 'crypto';
+
+import { ApiKey } from '../../database/entities/api-key.entity.js';
+
+export interface ApiKeyInfo {
+  id: string;
+  nombre: string;
+  scopes: string[];
+  activo: boolean;
+  created_at: Date;
+  last_used_at: Date | null;
+}
+
+@Injectable()
+export class ApiKeysService {
+  private readonly logger = new Logger(ApiKeysService.name);
+
+  constructor(
+    @InjectRepository(ApiKey)
+    private readonly apiKeyRepo: Repository<ApiKey>,
+  ) {}
+
+  /**
+   * Crear un nuevo API Key para la empresa.
+   * Genera 256 bits random, almacena hash SHA-256.
+   * Req 4.1
+   */
+  async create(
+    empresaId: string,
+    nombre: string,
+    scopes: string[],
+  ): Promise<{ key: string; id: string }> {
+    const rawKey = randomBytes(32).toString('base64');
+    const keyHash = createHash('sha256').update(rawKey).digest('hex');
+
+    const apiKey = this.apiKeyRepo.create({
+      empresa_id: empresaId,
+      nombre,
+      key_hash: keyHash,
+      scopes,
+      activo: true,
+    });
+
+    const saved = await this.apiKeyRepo.save(apiKey);
+
+    return { key: rawKey, id: saved.id };
+  }
+
+  /**
+   * Listar API Keys de una empresa (sin key ni hash).
+   * Req 4.2
+   */
+  async listByEmpresa(empresaId: string): Promise<ApiKeyInfo[]> {
+    const keys = await this.apiKeyRepo.find({
+      where: { empresa_id: empresaId },
+      order: { created_at: 'ASC' },
+    });
+
+    return keys.map((k) => ({
+      id: k.id,
+      nombre: k.nombre,
+      scopes: k.scopes,
+      activo: k.activo,
+      created_at: k.created_at,
+      last_used_at: k.last_used_at,
+    }));
+  }
+
+  /**
+   * Rotar un API Key: revocar el actual y generar uno nuevo con mismos scopes/nombre.
+   * Req 4.3, 4.6
+   */
+  async rotate(
+    apiKeyId: string,
+    empresaId: string,
+    correlationId?: string,
+  ): Promise<{ key: string; id: string }> {
+    const existing = await this.apiKeyRepo.findOne({
+      where: { id: apiKeyId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('API Key no encontrada');
+    }
+
+    if (existing.empresa_id !== empresaId) {
+      this.logger.warn(
+        `Intento de rotación cross-tenant: empresa ${empresaId} -> api_key empresa ${existing.empresa_id} | ID_Correlacion: ${correlationId ?? 'N/A'}`,
+      );
+      throw new ForbiddenException('No tiene permisos para gestionar API keys de otra empresa');
+    }
+
+    // Revocar el actual
+    existing.activo = false;
+    await this.apiKeyRepo.save(existing);
+
+    // Generar nuevo con mismos scopes y nombre
+    const rawKey = randomBytes(32).toString('base64');
+    const keyHash = createHash('sha256').update(rawKey).digest('hex');
+
+    const newApiKey = this.apiKeyRepo.create({
+      empresa_id: empresaId,
+      nombre: existing.nombre,
+      key_hash: keyHash,
+      scopes: existing.scopes,
+      activo: true,
+    });
+
+    const saved = await this.apiKeyRepo.save(newApiKey);
+
+    return { key: rawKey, id: saved.id };
+  }
+
+  /**
+   * Revocar (desactivar) un API Key.
+   * Req 4.4, 4.6
+   */
+  async revoke(apiKeyId: string, empresaId: string, correlationId?: string): Promise<void> {
+    const existing = await this.apiKeyRepo.findOne({
+      where: { id: apiKeyId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('API Key no encontrada');
+    }
+
+    if (existing.empresa_id !== empresaId) {
+      this.logger.warn(
+        `Intento de revocación cross-tenant: empresa ${empresaId} -> api_key empresa ${existing.empresa_id} | ID_Correlacion: ${correlationId ?? 'N/A'}`,
+      );
+      throw new ForbiddenException('No tiene permisos para gestionar API keys de otra empresa');
+    }
+
+    existing.activo = false;
+    await this.apiKeyRepo.save(existing);
+  }
+}

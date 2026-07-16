@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# Keys and certificates
+keys/
+*.pem
+*.p12
+*.pfx
+*.key
+*.crt
+
+# Docker volumes
+docker-data/
+pgdata/
+redis-data/
+minio-data/
+
+# Temporary files
+tmp/
+temp/
