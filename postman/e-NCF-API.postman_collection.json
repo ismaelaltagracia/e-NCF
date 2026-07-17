@@ -1,0 +1,574 @@
+{
+  "info": {
+    "name": "e-NCF API Gateway",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Colección completa del API Gateway de facturación electrónica e-NCF"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000" },
+    { "key": "access_token", "value": "" },
+    { "key": "refresh_token", "value": "" },
+    { "key": "empresa_id", "value": "" },
+    { "key": "usuario_id", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{access_token}}" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Registro (Onboarding)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/onboarding/registro",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa_nombre\": \"Mi PYME SRL\",\n  \"rnc\": \"123456789\",\n  \"admin_nombre\": \"Juan Admin\",\n  \"email\": \"admin@mipyme.com\",\n  \"password\": \"Admin123!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var data = pm.response.json();",
+                  "  pm.collectionVariables.set('empresa_id', data.empresa_id);",
+                  "  pm.collectionVariables.set('usuario_id', data.usuario_id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@mipyme.com\",\n  \"password\": \"Admin123!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var data = pm.response.json();",
+                  "  pm.collectionVariables.set('access_token', data.access_token);",
+                  "  pm.collectionVariables.set('refresh_token', data.refresh_token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/auth/refresh",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var data = pm.response.json();",
+                  "  pm.collectionVariables.set('access_token', data.access_token);",
+                  "  pm.collectionVariables.set('refresh_token', data.refresh_token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/auth/logout",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Empresa",
+      "item": [
+        {
+          "name": "Subir Certificado",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/empresas/me/certificado",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "certificado", "type": "file", "src": "" },
+                { "key": "password", "value": "cert_password_here", "type": "text" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cambiar Modo NCF",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/v1/empresas/me/configuracion",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modo_ncf\": \"automatico\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Ver Uso Mensual",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/empresas/me/uso",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Crear Usuario",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/usuarios",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Maria Facturadora\",\n  \"email\": \"maria@mipyme.com\",\n  \"password\": \"Maria123!\",\n  \"rol\": \"facturador\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar Usuarios",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/usuarios",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Actualizar Usuario",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/v1/usuarios/{{usuario_id}}",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rol\": \"lector\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "API Keys",
+      "item": [
+        {
+          "name": "Crear API Key",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/api-keys",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"produccion\",\n  \"scopes\": [\"facturas:write\", \"facturas:read\", \"pdf:read\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar API Keys",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/api-keys",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Rotar API Key",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/api-keys/:id/rotate",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Revocar API Key",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/v1/api-keys/:id",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catálogo",
+      "item": [
+        {
+          "name": "Crear Ítem",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/catalogo",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"producto\",\n  \"codigo\": \"PROD-001\",\n  \"descripcion\": \"Servicio de consultoría\",\n  \"precio_unitario\": 5000.00,\n  \"tasa_itbis\": 18\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar Catálogo",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/catalogo",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Buscar en Catálogo",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/catalogo?search=consultoría",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Actualizar Ítem",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/v1/catalogo/:id",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precio_unitario\": 5500.00\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar Ítem (borrado lógico)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/v1/catalogo/:id",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Secuencias NCF",
+      "item": [
+        {
+          "name": "Crear Secuencia",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/secuencias-ncf",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_comprobante\": \"E31\",\n  \"prefijo\": \"E310000001\",\n  \"numero_inicio\": 1,\n  \"numero_fin\": 1000,\n  \"numero_actual\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar Secuencias",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/secuencias-ncf",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Estado de Secuencias",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/secuencias-ncf/estado",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Facturas",
+      "item": [
+        {
+          "name": "Crear Factura",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/facturas",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rnc_emisor\": \"123456789\",\n  \"rnc_receptor\": \"101234567\",\n  \"nombre_receptor\": \"Cliente SRL\",\n  \"tipo_comprobante\": \"E31\",\n  \"items\": [\n    {\n      \"descripcion\": \"Servicio de consultoría\",\n      \"cantidad\": 1,\n      \"precio_unitario\": 5000.00,\n      \"tasa_itbis\": 18\n    }\n  ],\n  \"subtotal\": 5000.00,\n  \"total_itbis\": 900.00,\n  \"monto_total\": 5900.00\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar Facturas",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/facturas",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Detalle Factura",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/facturas/:id",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Estado DGII de Factura",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/facturas/:id/estado",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Descargar PDF",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/facturas/:id/pdf",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Anular Factura",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/facturas/:id/anular",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Validación RNC",
+      "item": [
+        {
+          "name": "Validar RNC",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/rnc/101234567/validar",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Crear Webhook",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/webhooks",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://mi-erp.com/webhooks/encf\",\n  \"eventos\": [\"factura_aceptada\", \"factura_rechazada\"],\n  \"secret\": \"mi-secreto-webhook-123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar Webhooks",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/webhooks",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Test Webhook",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/webhooks/:id/test",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Eliminar Webhook",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/v1/webhooks/:id",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auditoría",
+      "item": [
+        {
+          "name": "Listar Auditoría",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/auditoria",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check General",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health"
+          }
+        },
+        {
+          "name": "Health Check DGII",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health/dgii"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin (Super Admin)",
+      "item": [
+        {
+          "name": "Listar Planes",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/admin/planes",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        },
+        {
+          "name": "Cambiar Plan Empresa",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/v1/admin/empresas/:id/plan",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan_id\": \"uuid-del-plan\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Auditoría Global",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/admin/auditoria",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

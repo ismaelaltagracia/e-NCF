@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -16,6 +17,7 @@ import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { PlanesService } from '../planes/planes.service.js';
 import { CambiarPlanSchema, type CambiarPlanDto } from './dto/admin.schemas.js';
 
+@ApiTags('Admin')
 @Controller('api/v1/admin')
 @UseGuards(JwtAuthGuard, SuperAdminGuard)
 export class AdminController {

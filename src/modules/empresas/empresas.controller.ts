@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Controller,
   Post,
@@ -33,6 +34,7 @@ import {
 
 import * as path from 'node:path';
 
+@ApiTags('Empresa')
 @Controller('api/v1/empresas')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class EmpresasController {

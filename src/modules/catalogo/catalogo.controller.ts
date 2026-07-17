@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Controller,
   Post,
@@ -28,6 +29,7 @@ import {
   type ListCatalogoQueryDto,
 } from './dto/catalogo.schemas.js';
 
+@ApiTags('Catálogo')
 @Controller('api/v1/catalogo')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class CatalogoController {

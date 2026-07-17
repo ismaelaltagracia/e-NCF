@@ -1,0 +1,255 @@
+.onboarding {
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.onboarding-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.onboarding-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #213547;
+  margin-bottom: 0.5rem;
+}
+
+.onboarding-header p {
+  color: #5f6368;
+  font-size: 0.95rem;
+}
+
+.onboarding-steps {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #5f6368;
+}
+
+.step-indicator.active {
+  color: #1a73e8;
+  font-weight: 600;
+}
+
+.step-indicator.completed {
+  color: #34a853;
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #dadce0;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.step-indicator.active .step-number {
+  border-color: #1a73e8;
+  background-color: #1a73e8;
+  color: #ffffff;
+}
+
+.step-indicator.completed .step-number {
+  border-color: #34a853;
+  background-color: #34a853;
+  color: #ffffff;
+}
+
+.onboarding-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #213547;
+}
+
+.form-field input {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #213547;
+  transition: border-color 0.2s;
+}
+
+.form-field input:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+}
+
+.form-field input[aria-invalid="true"] {
+  border-color: #d93025;
+}
+
+.form-field input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 2px rgba(217, 48, 37, 0.15);
+}
+
+.field-error {
+  font-size: 0.8rem;
+  color: #d93025;
+  min-height: 1rem;
+}
+
+.form-error {
+  padding: 0.75rem 1rem;
+  background-color: #fce8e6;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  color: #d93025;
+  font-size: 0.875rem;
+}
+
+.form-submit {
+  margin-top: 0.5rem;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background-color: #1a73e8;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #1557b0;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Certificate upload step */
+.cert-upload-area {
+  border: 2px dashed #dadce0;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.cert-upload-area:hover {
+  border-color: #1a73e8;
+}
+
+.cert-upload-area input[type="file"] {
+  display: none;
+}
+
+.cert-upload-label {
+  display: inline-block;
+  padding: 0.625rem 1.25rem;
+  background-color: #f1f3f4;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: #213547;
+  transition: background-color 0.2s;
+}
+
+.cert-upload-label:hover {
+  background-color: #e8eaed;
+}
+
+.cert-upload-hint {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: #5f6368;
+}
+
+.cert-file-selected {
+  margin-top: 1rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #e8f0fe;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #1a73e8;
+}
+
+/* Confirmation step */
+.confirmation {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.confirmation-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1.5rem;
+  background-color: #34a853;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirmation-icon::after {
+  content: "✓";
+  font-size: 2rem;
+  color: #ffffff;
+}
+
+.confirmation h3 {
+  font-size: 1.25rem;
+  color: #213547;
+  margin-bottom: 0.75rem;
+}
+
+.confirmation p {
+  color: #5f6368;
+  margin-bottom: 1.5rem;
+}
+
+.btn-secondary {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: #ffffff;
+  color: #1a73e8;
+  border: 1px solid #1a73e8;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: #f1f7fe;
+  text-decoration: none;
+}

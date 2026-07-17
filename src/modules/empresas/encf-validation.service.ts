@@ -11,10 +11,10 @@ import {
 
 /**
  * Regex para validar formato e-NCF.
- * Formato: prefijo (letra(s) mayúscula(s)) + 10 dígitos numéricos.
+ * Formato: prefijo (letra mayúscula + 2 dígitos de tipo) + 10 dígitos numéricos = 13 chars.
  * Ejemplos válidos: E310000000001, E320000000015
  */
-export const ENCF_FORMAT_REGEX = /^[A-Z]\d{2}\d{8}$/;
+export const ENCF_FORMAT_REGEX = /^[A-Z]\d{2}\d{10}$/;
 
 export interface EncfValidationResult {
   e_ncf: string;

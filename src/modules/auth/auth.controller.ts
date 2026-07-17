@@ -1,9 +1,11 @@
+import { ApiTags } from '@nestjs/swagger';
 import { Controller, Post, Body, HttpCode, HttpStatus, UsePipes } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import * as AuthSchemas from './dto/auth.schemas.js';
 import type { TokenPair } from './interfaces/token-pair.interface.js';
 
+@ApiTags('Auth')
 @Controller('api/v1/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

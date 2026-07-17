@@ -46,13 +46,13 @@ describe('EncfValidationService', () => {
       });
 
       secuenciasNcfService.asignarSiguiente.mockResolvedValue({
-        e_ncf: 'E3100000001',
+        e_ncf: 'E310000000001',
         secuencia_id: 'seq-1',
       });
 
-      const result = await service.resolveEncf('empresa-1', 'E3199999999', 'E31');
+      const result = await service.resolveEncf('empresa-1', 'E310000099999', 'E31');
 
-      expect(result.e_ncf).toBe('E3100000001');
+      expect(result.e_ncf).toBe('E310000000001');
       expect(result.secuencia_id).toBe('seq-1');
       expect(result.modo).toBe(ModoNcf.AUTOMATICO);
       expect(secuenciasNcfService.asignarSiguiente).toHaveBeenCalledWith('empresa-1', 'E31');
@@ -65,13 +65,13 @@ describe('EncfValidationService', () => {
       });
 
       secuenciasNcfService.asignarSiguiente.mockResolvedValue({
-        e_ncf: 'E3200000005',
+        e_ncf: 'E320000000005',
         secuencia_id: 'seq-2',
       });
 
       const result = await service.resolveEncf('empresa-1', undefined, 'E32');
 
-      expect(result.e_ncf).toBe('E3200000005');
+      expect(result.e_ncf).toBe('E320000000005');
       expect(result.secuencia_id).toBe('seq-2');
       expect(result.modo).toBe(ModoNcf.AUTOMATICO);
     });
@@ -84,9 +84,9 @@ describe('EncfValidationService', () => {
         modo_ncf: ModoNcf.MANUAL,
       });
 
-      const result = await service.resolveEncf('empresa-1', 'E3100000001', 'E31');
+      const result = await service.resolveEncf('empresa-1', 'E310000000001', 'E31');
 
-      expect(result.e_ncf).toBe('E3100000001');
+      expect(result.e_ncf).toBe('E310000000001');
       expect(result.secuencia_id).toBeNull();
       expect(result.modo).toBe(ModoNcf.MANUAL);
       expect(secuenciasNcfService.asignarSiguiente).not.toHaveBeenCalled();
@@ -135,7 +135,7 @@ describe('EncfValidationService', () => {
         modo_ncf: ModoNcf.MANUAL,
       });
 
-      await expect(service.resolveEncf('empresa-1', 'e3100000001', 'E31')).rejects.toThrow(
+      await expect(service.resolveEncf('empresa-1', 'e310000000001', 'E31')).rejects.toThrow(
         'Formato de e_ncf inválido',
       );
     });
@@ -145,7 +145,7 @@ describe('EncfValidationService', () => {
     it('should throw BadRequestException when empresa does not exist', async () => {
       empresaRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.resolveEncf('nonexistent', 'E3100000001', 'E31')).rejects.toThrow(
+      await expect(service.resolveEncf('nonexistent', 'E310000000001', 'E31')).rejects.toThrow(
         BadRequestException,
       );
     });
@@ -153,25 +153,25 @@ describe('EncfValidationService', () => {
 
   describe('ENCF_FORMAT_REGEX', () => {
     it('should match valid e-NCF formats', () => {
-      expect(ENCF_FORMAT_REGEX.test('E3100000001')).toBe(true);
-      expect(ENCF_FORMAT_REGEX.test('E3200000015')).toBe(true);
-      expect(ENCF_FORMAT_REGEX.test('E3399999999')).toBe(true);
-      expect(ENCF_FORMAT_REGEX.test('E4100000001')).toBe(true);
+      expect(ENCF_FORMAT_REGEX.test('E310000000001')).toBe(true);
+      expect(ENCF_FORMAT_REGEX.test('E320000000015')).toBe(true);
+      expect(ENCF_FORMAT_REGEX.test('E339999999999')).toBe(true);
+      expect(ENCF_FORMAT_REGEX.test('E410000000001')).toBe(true);
     });
 
     it('should reject invalid e-NCF formats', () => {
       expect(ENCF_FORMAT_REGEX.test('')).toBe(false);
-      expect(ENCF_FORMAT_REGEX.test('e3100000001')).toBe(false); // lowercase
-      expect(ENCF_FORMAT_REGEX.test('31E00000001')).toBe(false); // wrong order
-      expect(ENCF_FORMAT_REGEX.test('E31000001')).toBe(false); // too short
-      expect(ENCF_FORMAT_REGEX.test('E31000000001')).toBe(false); // too long
-      expect(ENCF_FORMAT_REGEX.test('EE100000001')).toBe(false); // double letter
+      expect(ENCF_FORMAT_REGEX.test('e310000000001')).toBe(false); // lowercase
+      expect(ENCF_FORMAT_REGEX.test('31E0000000001')).toBe(false); // wrong order
+      expect(ENCF_FORMAT_REGEX.test('E3100000001')).toBe(false); // too short (11)
+      expect(ENCF_FORMAT_REGEX.test('E3100000000001')).toBe(false); // too long (14)
+      expect(ENCF_FORMAT_REGEX.test('EE1000000001')).toBe(false); // double letter
     });
   });
 
   describe('validateFormat static method', () => {
     it('should return true for valid format', () => {
-      expect(EncfValidationService.validateFormat('E3100000001')).toBe(true);
+      expect(EncfValidationService.validateFormat('E310000000001')).toBe(true);
     });
 
     it('should return false for invalid format', () => {

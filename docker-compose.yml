@@ -11,6 +11,9 @@ services:
     env_file:
       - path: .env
         required: false
+    volumes:
+      - backup_data:/backups:ro
+      - ./keys:/app/keys:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,12 +91,37 @@ services:
     networks:
       - encf-network
 
+  backup:
+    image: postgres:16-alpine
+    container_name: encf-backup
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-encf_db}
+      DB_USER: ${DB_USER:-encf_user}
+      DB_PASSWORD: ${DB_PASSWORD:-encf_password}
+      BACKUP_SCHEDULE: ${BACKUP_SCHEDULE:-0 2 * * *}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
+    volumes:
+      - backup_data:/backups
+      - ./scripts/backup.sh:/scripts/backup.sh:ro
+      - ./scripts/backup-entrypoint.sh:/scripts/backup-entrypoint.sh:ro
+    entrypoint: ["/bin/bash", "/scripts/backup-entrypoint.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - encf-network
+
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
   minio_data:
+    driver: local
+  backup_data:
     driver: local
 
 networks:

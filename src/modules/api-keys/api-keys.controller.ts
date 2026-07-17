@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Controller,
   Post,
@@ -20,6 +21,7 @@ import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import type { RequestContext } from '../../common/interfaces/request-context.interface.js';
 import { CreateApiKeySchema, type CreateApiKeyDto } from './dto/api-keys.schemas.js';
 
+@ApiTags('API Keys')
 @Controller('api/v1/api-keys')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ApiKeysController {

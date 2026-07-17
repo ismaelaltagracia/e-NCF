@@ -1,0 +1,457 @@
+.facturas {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.facturas-header {
+  margin-bottom: 2rem;
+}
+
+.facturas-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #213547;
+  margin-bottom: 0.5rem;
+}
+
+.facturas-header p {
+  color: #5f6368;
+  font-size: 0.95rem;
+}
+
+.facturas-readonly-badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background-color: #f1f3f4;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #5f6368;
+}
+
+/* Form fields */
+.facturas-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.facturas-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.facturas-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.facturas-field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #213547;
+}
+
+.facturas-field input {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #213547;
+  transition: border-color 0.2s;
+}
+
+.facturas-field input:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+}
+
+.facturas-field input[aria-invalid="true"] {
+  border-color: #d93025;
+}
+
+.facturas-field input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 2px rgba(217, 48, 37, 0.15);
+}
+
+.facturas-field input:disabled {
+  background-color: #f1f3f4;
+  cursor: not-allowed;
+}
+
+.facturas-field-error {
+  font-size: 0.8rem;
+  color: #d93025;
+  min-height: 1rem;
+}
+
+/* Catalog search */
+.facturas-catalog-search {
+  position: relative;
+}
+
+.facturas-catalog-search input {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #213547;
+  transition: border-color 0.2s;
+}
+
+.facturas-catalog-search input:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+}
+
+.facturas-catalog-search input:disabled {
+  background-color: #f1f3f4;
+  cursor: not-allowed;
+}
+
+.facturas-catalog-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.facturas-catalog-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f3f4;
+  transition: background-color 0.15s;
+}
+
+.facturas-catalog-item:hover {
+  background-color: #e8f0fe;
+}
+
+.facturas-catalog-item:last-child {
+  border-bottom: none;
+}
+
+.facturas-catalog-item-name {
+  font-size: 0.875rem;
+  color: #213547;
+}
+
+.facturas-catalog-item-price {
+  font-size: 0.8rem;
+  color: #5f6368;
+}
+
+.facturas-catalog-empty {
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: #5f6368;
+  text-align: center;
+}
+
+/* Line items */
+.facturas-lines-section {
+  margin-top: 0.5rem;
+}
+
+.facturas-lines-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #213547;
+  margin-bottom: 0.75rem;
+}
+
+.facturas-line {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border: 1px solid #e8eaed;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.facturas-line-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.facturas-line-field label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #5f6368;
+}
+
+.facturas-line-field input {
+  padding: 0.5rem 0.625rem;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #213547;
+}
+
+.facturas-line-field input:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+}
+
+.facturas-line-field input:disabled {
+  background-color: #f1f3f4;
+  cursor: not-allowed;
+}
+
+.facturas-line-field .facturas-line-calculated {
+  padding: 0.5rem 0.625rem;
+  font-size: 0.875rem;
+  color: #213547;
+  background-color: #e8eaed;
+  border-radius: 4px;
+  min-height: 2.125rem;
+  display: flex;
+  align-items: center;
+}
+
+.facturas-line-remove {
+  margin-top: 1.25rem;
+  padding: 0.4rem 0.6rem;
+  background: none;
+  border: 1px solid #d93025;
+  border-radius: 4px;
+  color: #d93025;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.facturas-line-remove:hover:not(:disabled) {
+  background-color: #fce8e6;
+}
+
+.facturas-line-remove:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.facturas-lines-error {
+  font-size: 0.8rem;
+  color: #d93025;
+  margin-top: 0.25rem;
+}
+
+/* Totals */
+.facturas-totals {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f1f3f4;
+  border-radius: 6px;
+}
+
+.facturas-totals-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  font-size: 0.9rem;
+  color: #213547;
+}
+
+.facturas-totals-row.facturas-totals-grand {
+  font-weight: 700;
+  font-size: 1rem;
+  border-top: 1px solid #dadce0;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+}
+
+/* Submit */
+.facturas-submit {
+  margin-top: 1rem;
+}
+
+.facturas-btn-primary {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background-color: #1a73e8;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.facturas-btn-primary:hover:not(:disabled) {
+  background-color: #1557b0;
+}
+
+.facturas-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.facturas-btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  background-color: #ffffff;
+  color: #1a73e8;
+  border: 1px solid #1a73e8;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 0.5rem;
+}
+
+.facturas-btn-add:hover:not(:disabled) {
+  background-color: #f1f7fe;
+}
+
+.facturas-btn-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* General error */
+.facturas-form-error {
+  padding: 0.75rem 1rem;
+  background-color: #fce8e6;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  color: #d93025;
+  font-size: 0.875rem;
+}
+
+/* Success */
+.facturas-success {
+  padding: 1.5rem;
+  background-color: #e6f4ea;
+  border: 1px solid #a8dab5;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.facturas-success-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem;
+  background-color: #34a853;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.facturas-success-icon::after {
+  content: "✓";
+  font-size: 1.5rem;
+  color: #ffffff;
+}
+
+.facturas-success h3 {
+  font-size: 1.1rem;
+  color: #213547;
+  margin-bottom: 1rem;
+}
+
+.facturas-success-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.facturas-success-detail {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.facturas-success-detail-label {
+  font-weight: 500;
+  color: #5f6368;
+}
+
+.facturas-success-detail-value {
+  color: #213547;
+  font-weight: 600;
+}
+
+.facturas-success-link {
+  display: inline-block;
+  padding: 0.625rem 1.25rem;
+  background-color: #1a73e8;
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.2s;
+  margin-right: 0.5rem;
+}
+
+.facturas-success-link:hover {
+  background-color: #1557b0;
+  text-decoration: none;
+}
+
+.facturas-btn-new {
+  display: inline-block;
+  padding: 0.625rem 1.25rem;
+  background-color: #ffffff;
+  color: #1a73e8;
+  border: 1px solid #1a73e8;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.2s;
+}
+
+.facturas-btn-new:hover {
+  background-color: #f1f7fe;
+}
+
+@media (max-width: 640px) {
+  .facturas-row {
+    grid-template-columns: 1fr;
+  }
+
+  .facturas-line {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .facturas-line-remove {
+    grid-column: span 2;
+    margin-top: 0.5rem;
+  }
+}

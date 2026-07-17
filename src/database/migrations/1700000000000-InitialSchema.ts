@@ -32,7 +32,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
       CREATE TABLE "planes" (
         "id" uuid NOT NULL DEFAULT gen_random_uuid(),
         "nombre" varchar NOT NULL,
-        "limite_facturas_mensual" integer NOT NULL,
+        "limite_facturas_mensual" integer,
         "precio" decimal(10,2) NOT NULL,
         "activo" boolean NOT NULL DEFAULT true,
         "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),

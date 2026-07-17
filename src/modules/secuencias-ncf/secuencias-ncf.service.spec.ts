@@ -18,7 +18,7 @@ describe('SecuenciasNcfService', () => {
     empresa_id: empresaId,
     empresa: {} as any,
     tipo_comprobante: 'E31',
-    prefijo: 'E310000001',
+    prefijo: 'E31',
     numero_inicio: '1',
     numero_fin: '1000',
     numero_actual: '1',
@@ -54,7 +54,7 @@ describe('SecuenciasNcfService', () => {
     it('should create a secuencia with numero_actual = numero_inicio', async () => {
       const dto = {
         tipo_comprobante: 'E31' as const,
-        prefijo: 'E310000001',
+        prefijo: 'E31',
         numero_inicio: 1,
         numero_fin: 1000,
       };
@@ -67,7 +67,7 @@ describe('SecuenciasNcfService', () => {
       expect(repo.create).toHaveBeenCalledWith({
         empresa_id: empresaId,
         tipo_comprobante: 'E31',
-        prefijo: 'E310000001',
+        prefijo: 'E31',
         numero_inicio: '1',
         numero_fin: '1000',
         numero_actual: '1',
@@ -169,7 +169,7 @@ describe('SecuenciasNcfService', () => {
 
       const result = await service.asignarSiguiente(empresaId, 'E31');
 
-      expect(result.e_ncf).toBe('E31000000100000042');
+      expect(result.e_ncf).toBe('E310000000042');
       expect(secuencia.numero_actual).toBe('43');
       expect(mockManager.save).toHaveBeenCalled();
     });
@@ -283,7 +283,7 @@ describe('SecuenciasNcfService', () => {
     it('should format e-NCF correctly with padded number', async () => {
       const secuencia = {
         ...mockSecuencia,
-        prefijo: 'E310000001',
+        prefijo: 'E31',
         numero_actual: '5',
       };
 
@@ -305,8 +305,8 @@ describe('SecuenciasNcfService', () => {
 
       const result = await service.asignarSiguiente(empresaId, 'E31');
 
-      // prefijo + padStart(8, '0') of numero_actual
-      expect(result.e_ncf).toBe('E31000000100000005');
+      // prefijo + padStart(10, '0') of numero_actual
+      expect(result.e_ncf).toBe('E310000000005');
     });
   });
 });

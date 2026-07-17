@@ -26,5 +26,6 @@
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true
-  }
+  },
+  "exclude": ["client", "node_modules", "dist"]
 }

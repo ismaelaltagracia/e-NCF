@@ -118,10 +118,10 @@ export class AuthService {
       await this.usuarioRepo.save(usuario);
     }
 
-    // Verify empresa estado is "activo"
+    // Verify empresa estado is not "inactivo"
     const empresa = usuario.empresa;
-    if (!empresa || empresa.estado !== EstadoEmpresa.ACTIVO) {
-      throw new ForbiddenException('La empresa no se encuentra en estado activo');
+    if (!empresa || empresa.estado === EstadoEmpresa.INACTIVO) {
+      throw new ForbiddenException('La empresa se encuentra inactiva');
     }
 
     // Generate tokens
@@ -194,8 +194,8 @@ export class AuthService {
       throw new UnauthorizedException('Usuario inactivo');
     }
 
-    if (!usuario.empresa || usuario.empresa.estado !== EstadoEmpresa.ACTIVO) {
-      throw new ForbiddenException('La empresa no se encuentra en estado activo');
+    if (!usuario.empresa || usuario.empresa.estado === EstadoEmpresa.INACTIVO) {
+      throw new ForbiddenException('La empresa se encuentra inactiva');
     }
 
     const accessToken = await this.generateAccessToken({

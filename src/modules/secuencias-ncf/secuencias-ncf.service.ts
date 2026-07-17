@@ -142,8 +142,8 @@ export class SecuenciasNcfService {
         );
       }
 
-      // Formatear e-NCF: prefijo + LPAD(numero_actual, 8, '0')
-      const eNcf = secuencia.prefijo + actual.toString().padStart(8, '0');
+      // Formatear e-NCF: prefijo + LPAD(numero_actual, 10, '0')
+      const eNcf = secuencia.prefijo + actual.toString().padStart(10, '0');
 
       // Incrementar numero_actual
       secuencia.numero_actual = (actual + 1).toString();

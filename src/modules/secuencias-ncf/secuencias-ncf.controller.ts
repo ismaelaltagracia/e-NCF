@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Controller,
   Post,
@@ -24,6 +25,7 @@ import {
   type UpdateSecuenciaNcfDto,
 } from './dto/secuencias-ncf.schemas.js';
 
+@ApiTags('Secuencias NCF')
 @Controller('api/v1/secuencias-ncf')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SecuenciasNcfController {

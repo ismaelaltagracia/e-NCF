@@ -266,7 +266,7 @@ iu
     - **Property 11: Round-trip de conversión JSON a XML**
     - **Validates: Requirements 9.4**
 
-  - [ ] 9.3 Implementar Circuit Breaker con opossum
+  - [x] 9.3 Implementar Circuit Breaker con opossum
     - Crear CircuitBreakerService envolviendo llamadas a DGII
     - Configurar: timeout 30s, resetTimeout 30s, volumeThreshold 5, rollingCountTimeout 60s
     - Estados: CLOSED → OPEN (5 fallos en 60s) → HALF-OPEN (30s) → CLOSED/OPEN
@@ -277,7 +277,7 @@ iu
     - **Property 13: Máquina de estados del Circuit Breaker**
     - **Validates: Requirements 12.1, 12.2, 12.3, 12.4, 12.5**
 
-  - [ ] 9.5 Implementar cola de reintentos con BullMQ
+  - [x] 9.5 Implementar cola de reintentos con BullMQ
     - Crear RetryQueueModule con BullMQ sobre Redis
     - Configurar: 5 intentos, backoff exponencial (5s, 10s, 20s, 40s, 80s)
     - Pausar workers cuando Circuit Breaker está OPEN
@@ -289,7 +289,7 @@ iu
     - **Property 14: Cálculo de backoff exponencial**
     - **Validates: Requirements 19.1, 19.2**
 
-  - [ ] 9.7 Implementar servicio de transmisión a DGII
+  - [x] 9.7 Implementar servicio de transmisión a DGII
     - Crear TransmisionService
     - Transmitir XML firmado al endpoint e-CF con Bearer Token (timeout 30s)
     - Extraer Track_ID de respuesta exitosa
@@ -297,8 +297,8 @@ iu
     - Encolar en BullMQ si error transitorio o CB open
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
 
-- [ ] 10. Módulo de Facturación (flujo completo)
-  - [ ] 10.1 Implementar validación Zod del payload de factura
+- [x] 10. Módulo de Facturación (flujo completo)
+  - [x] 10.1 Implementar validación Zod del payload de factura
     - Crear esquema Zod: RNC emisor/receptor, items (min 1), montos, ITBIS
     - Validar formato RNC (9 u 11 dígitos numéricos)
     - Validar aritmética de montos (tolerancia 0.01)
@@ -314,7 +314,7 @@ iu
     - **Property 10: Invariante aritmética de montos de factura**
     - **Validates: Requirements 8.4**
 
-  - [ ] 10.4 Implementar validador de RNC receptor contra DGII
+  - [x] 10.4 Implementar validador de RNC receptor contra DGII
     - Crear RncValidatorService
     - Consultar servicio DGII de RNC (timeout 5s)
     - Cachear RNCs validados en Redis (TTL 24h)
@@ -323,7 +323,7 @@ iu
     - Flag configurable validar_rnc_receptor por empresa
     - _Requirements: 33.1, 33.2, 33.3, 33.4, 33.5, 33.6_
 
-  - [ ] 10.5 Implementar flujo completo POST /api/v1/facturas
+  - [x] 10.5 Implementar flujo completo POST /api/v1/facturas
     - Crear FacturasModule con FacturasService
     - Orquestar: validar → verificar límite mensual → asignar NCF → crear registro → convertir XML → firmar → subir XML a S3 → transmitir a DGII
     - Crear Registro_Factura con empresa_id, usuario_id/api_key_id, e_ncf, estado "enviado"
@@ -333,7 +333,7 @@ iu
     - Incrementar uso_mensual atómicamente
     - _Requirements: 8.6, 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 18.2, 18.3, 18.4_
 
-  - [ ] 10.6 Implementar consulta de facturas con aislamiento multi-tenencia
+  - [x] 10.6 Implementar consulta de facturas con aislamiento multi-tenencia
     - GET /api/v1/facturas: listar facturas de la empresa (paginado)
     - GET /api/v1/facturas/:id: detalle de factura
     - GET /api/v1/facturas/:id/estado: estado actual DGII
@@ -345,11 +345,11 @@ iu
     - **Property 2: Aislamiento multi-tenencia**
     - **Validates: Requirements 18.2, 18.5, 18.7, 25.2, 25.6, 16.5, 3.4, 3.5**
 
-- [ ] 11. Checkpoint - Verificar flujo de facturación completo
+- [x] 11. Checkpoint - Verificar flujo de facturación completo
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Generación de PDF y QR
-  - [ ] 12.1 Implementar generador de código QR
+- [x] 12. Generación de PDF y QR
+  - [x] 12.1 Implementar generador de código QR
     - Crear QrGeneratorService
     - Generar QR PNG 150x150 px mínimo, corrección "M"
     - Payload: URL DGII + RNC emisor + RNC receptor + e-NCF + monto (2 decimales, sin símbolo)
@@ -359,7 +359,7 @@ iu
     - **Property 17: Formato de payload QR según patrón DGII**
     - **Validates: Requirements 14.1, 14.3**
 
-  - [ ] 12.3 Implementar generador de PDF con pdfkit
+  - [x] 12.3 Implementar generador de PDF con pdfkit
     - Crear PdfGeneratorService
     - Formatos: ticket (80mm) y carta (según preferencia empresa)
     - Incluir: QR (min 25x25mm), encabezado, RNCs, detalle ítems, ITBIS, totales, e-NCF, Track_ID
@@ -368,15 +368,15 @@ iu
     - Reintentar subida hasta 3 veces si falla
     - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6_
 
-  - [ ] 12.4 Implementar endpoint de descarga de PDF (URL pre-firmada)
+  - [x] 12.4 Implementar endpoint de descarga de PDF (URL pre-firmada)
     - GET /api/v1/facturas/:id/pdf: generar URL pre-firmada (TTL 15 min)
     - Verificar que factura pertenece a la empresa del usuario
     - Retornar URL + timestamp expiración ISO 8601
     - 404 si factura no existe o PDF no disponible
     - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5_
 
-- [ ] 13. Módulos de Soporte: Auditoría, Webhooks, Polling
-  - [ ] 13.1 Implementar módulo de auditoría
+- [x] 13. Módulos de Soporte: Auditoría, Webhooks, Polling
+  - [x] 13.1 Implementar módulo de auditoría
     - Crear AuditoriaModule con AuditoriaService
     - Registrar acciones: factura_enviada, factura_anulada, certificado_subido, certificado_reemplazado, configuracion_cambiada, usuario_creado, usuario_desactivado, plan_cambiado, secuencia_creada, api_key_creada, api_key_revocada
     - Capturar: empresa_id, usuario_id/api_key_id, datos antes/después, ip_origen, correlation_id
@@ -385,7 +385,7 @@ iu
     - No permitir UPDATE ni DELETE de registros de auditoría
     - _Requirements: 31.1, 31.2, 31.3, 31.4, 31.5, 31.6_
 
-  - [ ] 13.2 Implementar módulo de webhooks
+  - [x] 13.2 Implementar módulo de webhooks
     - Crear WebhooksModule con WebhooksService
     - POST /api/v1/webhooks: configurar webhook (url HTTPS, eventos, secret)
     - GET /api/v1/webhooks: listar webhooks de empresa
@@ -401,7 +401,7 @@ iu
     - **Property 18: Firma HMAC-SHA256 de webhooks**
     - **Validates: Requirements 32.3**
 
-  - [ ] 13.4 Implementar polling de estado DGII
+  - [x] 13.4 Implementar polling de estado DGII
     - Crear EstadoPollingService con @nestjs/schedule
     - Consultar estado para facturas con estado_dgii="aceptado" (intervalo configurable, default 5 min)
     - Actualizar a estado terminal: aprobado, rechazado_definitivo
@@ -409,7 +409,7 @@ iu
     - Dejar de consultar tras estado terminal
     - _Requirements: 29.1, 29.2, 29.3, 29.4, 29.5, 29.6_
 
-  - [ ] 13.5 Implementar anulación de e-CF
+  - [x] 13.5 Implementar anulación de e-CF
     - POST /api/v1/facturas/:id/anular: solo admin, solo facturas con estado "aprobado"
     - Generar XML de anulación, firmar con XAdES-BES, transmitir a DGII
     - Actualizar estado_dgii a "anulado" tras confirmación
@@ -417,11 +417,11 @@ iu
     - Crear registro de auditoría
     - _Requirements: 30.1, 30.2, 30.3, 30.4, 30.5, 30.6, 30.7_
 
-- [ ] 14. Checkpoint - Verificar módulos de soporte
+- [x] 14. Checkpoint - Verificar módulos de soporte
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 15. Health Check, Correlation ID y Backup
-  - [ ] 15.1 Implementar endpoints de health check
+- [x] 15. Health Check, Correlation ID y Backup
+  - [x] 15.1 Implementar endpoints de health check
     - GET /health: estado general + dependencias (PostgreSQL, Redis, MinIO) con latencia
     - GET /health/dgii: verificar conectividad con endpoint semilla DGII (timeout 10s)
     - Timeout 5s por dependencia, 503 si PostgreSQL o Redis caídos
@@ -431,7 +431,7 @@ iu
     - **Property 19: Propagación de Correlation ID**
     - **Validates: Requirements 21.1, 21.3, 21.4**
 
-  - [ ] 15.3 Implementar servicio de backup automático
+  - [x] 15.3 Implementar servicio de backup automático
     - Crear contenedor backup en docker-compose.yml
     - pg_dump diario (default 02:00 UTC, configurable)
     - Comprimir a .sql.gz, retener últimos 7 días (configurable BACKUP_RETENTION_DAYS)
@@ -440,8 +440,8 @@ iu
     - GET /health/backup: estado último backup (solo Super_Admin)
     - _Requirements: 34.1, 34.2, 34.3, 34.4, 34.5, 34.6_
 
-- [ ] 16. Módulo Admin (Super_Admin)
-  - [ ] 16.1 Implementar endpoints de administración de plataforma
+- [x] 16. Módulo Admin (Super_Admin)
+  - [x] 16.1 Implementar endpoints de administración de plataforma
     - Crear AdminModule
     - Autenticación Super_Admin via misma ruta login (JWT con rol="super_admin", sin empresa_id)
     - GET /api/v1/admin/planes: listar todos los planes
@@ -451,14 +451,14 @@ iu
     - Rechazar acceso 403 para usuarios no Super_Admin en /api/v1/admin/*
     - _Requirements: 27.6, 27.7, 27.8, 31.6_
 
-- [ ] 17. Aplicación Web React (SPA)
-  - [ ] 17.1 Configurar proyecto React SPA servido por NestJS
+- [x] 17. Aplicación Web React (SPA)
+  - [x] 17.1 Configurar proyecto React SPA servido por NestJS
     - Crear proyecto React en carpeta client/ con Vite
     - Configurar NestJS ServeStaticModule para servir en /app
     - Configurar rutas y navegación SPA
     - _Requirements: 1.1, 1.11_
 
-  - [ ] 17.2 Implementar flujo de onboarding en React
+  - [x] 17.2 Implementar flujo de onboarding en React
     - Formulario registro: nombre empresa, RNC, nombre admin, email, contraseña
     - Validación client-side antes de envío
     - Paso de carga de certificado (.p12/.pfx, max 10MB, campo contraseña)
@@ -466,7 +466,7 @@ iu
     - Manejo de errores inline por campo
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.8, 1.9, 1.10, 1.11_
 
-  - [ ] 17.3 Implementar interfaz de facturación en React
+  - [x] 17.3 Implementar interfaz de facturación en React
     - Formulario: RNC receptor, nombre receptor, selector de ítems del catálogo con búsqueda
     - Agregar múltiples líneas (min 1)
     - Cálculo en tiempo real: subtotal, ITBIS por línea, total
@@ -476,13 +476,13 @@ iu
     - Modo solo lectura para rol "lector"
     - _Requirements: 26.1, 26.2, 26.3, 26.4, 26.5, 26.6, 26.7, 26.8, 26.9, 26.10_
 
-  - [ ] 17.4 Implementar módulo de gestión de catálogo en React
+  - [x] 17.4 Implementar módulo de gestión de catálogo en React
     - CRUD visual de productos/servicios
     - Búsqueda y filtros (tipo, activo)
     - Formulario con validación (precio, tasa ITBIS)
     - _Requirements: 25.1, 25.2, 25.3, 25.4_
 
-- [ ] 18. Checkpoint final - Verificar integración completa
+- [x] 18. Checkpoint final - Verificar integración completa
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Controller,
   Post,
@@ -25,6 +26,7 @@ import {
   type UpdateUsuarioDto,
 } from './dto/users.schemas.js';
 
+@ApiTags('Usuarios')
 @Controller('api/v1/usuarios')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
