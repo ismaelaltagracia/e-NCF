@@ -10,6 +10,7 @@ interface FieldErrors {
   admin_nombre?: string;
   email?: string;
   password?: string;
+  confirm_password?: string;
 }
 
 interface CertErrors {
@@ -26,6 +27,7 @@ function validateRegistroForm(values: {
   admin_nombre: string;
   email: string;
   password: string;
+  confirm_password: string;
 }): FieldErrors {
   const errors: FieldErrors = {};
 
@@ -63,6 +65,12 @@ function validateRegistroForm(values: {
     errors.password = 'Contraseña debe contener al menos una letra minúscula';
   } else if (!/[0-9]/.test(values.password)) {
     errors.password = 'Contraseña debe contener al menos un dígito';
+  }
+
+  if (!values.confirm_password) {
+    errors.confirm_password = 'Debe confirmar la contraseña';
+  } else if (values.password !== values.confirm_password) {
+    errors.confirm_password = 'Las contraseñas no coinciden';
   }
 
   return errors;
@@ -137,6 +145,7 @@ function RegistroStep({ onSuccess }: { onSuccess: (token: string) => void }) {
     admin_nombre: '',
     email: '',
     password: '',
+    confirm_password: '',
   });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [generalError, setGeneralError] = useState('');
@@ -318,6 +327,22 @@ function RegistroStep({ onSuccess }: { onSuccess: (token: string) => void }) {
           />
           <span id="err-password" className="field-error" role="alert">
             {errors.password || ''}
+          </span>
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="confirm_password">Confirmar Contraseña</label>
+          <input
+            id="confirm_password"
+            type="password"
+            value={values.confirm_password}
+            onChange={handleChange('confirm_password')}
+            aria-invalid={!!errors.confirm_password}
+            aria-describedby={errors.confirm_password ? 'err-confirm_password' : undefined}
+            autoComplete="new-password"
+          />
+          <span id="err-confirm_password" className="field-error" role="alert">
+            {errors.confirm_password || ''}
           </span>
         </div>
 

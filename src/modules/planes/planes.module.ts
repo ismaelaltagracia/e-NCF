@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { PlanesController } from './planes.controller.js';
 import { PlanesService } from './planes.service.js';
 import { Plan } from '../../database/entities/plan.entity.js';
 import { UsoMensual } from '../../database/entities/uso-mensual.entity.js';
@@ -8,6 +9,7 @@ import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Plan, UsoMensual, Empresa]), AuthModule],
+  controllers: [PlanesController],
   providers: [PlanesService],
   exports: [PlanesService],
 })

@@ -24,12 +24,18 @@ function Layout() {
               <NavLink to="/catalogo" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Catálogo
               </NavLink>
+              <NavLink to="/configuracion" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                Configuración
+              </NavLink>
               <button className="nav-link logout-btn" onClick={handleLogout}>
                 Cerrar Sesión
               </button>
             </>
           ) : (
             <>
+              <NavLink to="/planes" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                Planes
+              </NavLink>
               <NavLink to="/login" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Iniciar Sesión
               </NavLink>

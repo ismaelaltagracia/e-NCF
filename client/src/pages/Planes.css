@@ -1,0 +1,147 @@
+.planes-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.planes-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.planes-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #213547;
+  margin-bottom: 0.5rem;
+}
+
+.planes-header p {
+  color: #5f6368;
+  font-size: 1rem;
+}
+
+.planes-loading,
+.planes-error {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1rem;
+}
+
+.planes-error {
+  color: #d93025;
+}
+
+.planes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.plan-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1.5rem;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 12px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.plan-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.plan-card--featured {
+  border-color: #1a73e8;
+  border-width: 2px;
+  box-shadow: 0 4px 16px rgba(26, 115, 232, 0.15);
+}
+
+.plan-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a73e8;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.plan-nombre {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #213547;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.plan-precio {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.plan-precio-valor {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #213547;
+}
+
+.plan-precio-periodo {
+  font-size: 0.9rem;
+  color: #5f6368;
+}
+
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  flex: 1;
+}
+
+.plan-features li {
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  color: #3c4043;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.plan-features li:last-child {
+  border-bottom: none;
+}
+
+.plan-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #1a73e8;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  background: #ffffff;
+  color: #1a73e8;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.plan-btn:hover {
+  background: #f1f7fe;
+}
+
+.plan-btn--primary {
+  background: #1a73e8;
+  color: #ffffff;
+  border-color: #1a73e8;
+}
+
+.plan-btn--primary:hover {
+  background: #1557b0;
+}
