@@ -77,13 +77,14 @@ export class PlanesService implements OnModuleInit {
     return this.planRepo.save(plan);
   }
 
-  async editarPlan(id: string, data: { nombre?: string; limite_facturas_mensual?: number | null; precio?: number; activo?: boolean }): Promise<Plan> {
+  async editarPlan(id: string, data: { nombre?: string; limite_facturas_mensual?: number | null; precio?: number; activo?: boolean; permite_api?: boolean }): Promise<Plan> {
     const plan = await this.planRepo.findOne({ where: { id } });
     if (!plan) throw new Error('Plan no encontrado');
     if (data.nombre !== undefined) plan.nombre = data.nombre;
     if (data.limite_facturas_mensual !== undefined) plan.limite_facturas_mensual = data.limite_facturas_mensual;
     if (data.precio !== undefined) plan.precio = String(data.precio);
     if (data.activo !== undefined) plan.activo = data.activo;
+    if (data.permite_api !== undefined) plan.permite_api = data.permite_api;
     return this.planRepo.save(plan);
   }
 

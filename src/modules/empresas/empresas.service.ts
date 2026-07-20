@@ -72,6 +72,9 @@ export class EmpresasService {
     empresa.salt_encriptacion = iv;
     empresa.auth_tag = authTag;
 
+    // Guardar fecha de vencimiento del certificado
+    empresa.certificado_vence_en = certPem.validity.notAfter;
+
     // Actualizar estado a "activo" si está en "certificacion"
     if (empresa.estado === EstadoEmpresa.CERTIFICACION) {
       empresa.estado = EstadoEmpresa.ACTIVO;

@@ -86,6 +86,38 @@ export class EmpresasController {
   }
 
   /**
+   * GET /api/v1/empresas/me/certificado-estado
+   * Retorna el estado del certificado digital (fecha de vencimiento).
+   */
+  @Get('me/certificado-estado')
+  @Roles('admin', 'facturador', 'lector')
+  @HttpCode(HttpStatus.OK)
+  async getCertificadoEstado(@CurrentUser() user: RequestContext) {
+    const empresa = await this.empresasService.findById(user.empresa_id);
+    if (!empresa || !empresa.certificado_encriptado) {
+      return { tiene_certificado: false, vence_en: null, dias_restantes: null, estado: 'sin_certificado' };
+    }
+
+    const venceEn = empresa.certificado_vence_en;
+    if (!venceEn) {
+      return { tiene_certificado: true, vence_en: null, dias_restantes: null, estado: 'desconocido' };
+    }
+
+    const ahora = new Date();
+    const diasRestantes = Math.ceil((venceEn.getTime() - ahora.getTime()) / (1000 * 60 * 60 * 24));
+    let estado = 'vigente';
+    if (diasRestantes <= 0) estado = 'vencido';
+    else if (diasRestantes <= 30) estado = 'por_vencer';
+
+    return {
+      tiene_certificado: true,
+      vence_en: venceEn.toISOString(),
+      dias_restantes: diasRestantes,
+      estado,
+    };
+  }
+
+  /**
    * GET /api/v1/empresas/me/uso
    * Consulta el uso actual de facturación del mes para la empresa autenticada.
    * Req 27.9

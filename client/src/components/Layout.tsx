@@ -7,18 +7,31 @@ function Layout() {
   const { isAuthenticated, userRole, logout } = useAuth();
   const navigate = useNavigate();
   const [permiteApi, setPermiteApi] = useState(false);
+  const [certAlert, setCertAlert] = useState<{ estado: string; dias_restantes: number | null; vence_en: string | null } | null>(null);
 
   const isSuperAdmin = userRole === 'super_admin';
 
   useEffect(() => {
     if (isAuthenticated && !isSuperAdmin) {
       const token = localStorage.getItem('access_token');
+      // Fetch permisos
       fetch('/api/v1/empresas/me/permisos', {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data) setPermiteApi(data.permite_api);
+        })
+        .catch(() => {});
+      // Fetch certificado estado
+      fetch('/api/v1/empresas/me/certificado-estado', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && (data.estado === 'por_vencer' || data.estado === 'vencido' || data.estado === 'sin_certificado')) {
+            setCertAlert(data);
+          }
         })
         .catch(() => {});
     }
@@ -96,6 +109,22 @@ function Layout() {
           )}
         </nav>
       </header>
+      {certAlert && (
+        <div style={{
+          padding: '0.5rem 1.5rem',
+          fontSize: '0.85rem',
+          fontWeight: 500,
+          textAlign: 'center',
+          backgroundColor: certAlert.estado === 'vencido' ? '#fce8e6' : certAlert.estado === 'sin_certificado' ? '#fff3e0' : '#fef7e0',
+          color: certAlert.estado === 'vencido' ? '#d93025' : '#e37400',
+          borderBottom: '1px solid',
+          borderColor: certAlert.estado === 'vencido' ? '#f5c6cb' : '#fdd663',
+        }}>
+          {certAlert.estado === 'vencido' && '⛔ Su certificado digital ha vencido. No podrá firmar facturas hasta renovarlo.'}
+          {certAlert.estado === 'por_vencer' && `⚠️ Su certificado digital vence en ${certAlert.dias_restantes} día${certAlert.dias_restantes !== 1 ? 's' : ''} (${new Date(certAlert.vence_en!).toLocaleDateString('es-DO')}). Renuévelo pronto.`}
+          {certAlert.estado === 'sin_certificado' && '⚠️ No tiene certificado digital cargado. Cargue su certificado .p12 en Configuración para poder facturar.'}
+        </div>
+      )}
       <main className="layout-content">
         <Outlet />
       </main>

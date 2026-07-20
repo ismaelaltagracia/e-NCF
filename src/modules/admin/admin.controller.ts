@@ -90,7 +90,7 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   async editarPlan(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() body: { nombre?: string; limite_facturas_mensual?: number | null; precio?: number; activo?: boolean },
+    @Body() body: { nombre?: string; limite_facturas_mensual?: number | null; precio?: number; activo?: boolean; permite_api?: boolean },
   ) {
     return this.planesService.editarPlan(id, body);
   }

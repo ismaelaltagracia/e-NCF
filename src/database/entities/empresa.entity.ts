@@ -65,6 +65,9 @@ export class Empresa {
   @Column({ type: 'boolean', default: true })
   validar_rnc_receptor!: boolean;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  certificado_vence_en!: Date | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at!: Date;
 

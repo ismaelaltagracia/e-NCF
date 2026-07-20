@@ -17,7 +17,7 @@ function AdminPlanes() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Plan | null>(null);
-  const [form, setForm] = useState({ nombre: '', precio: '', limite: '', activo: true });
+  const [form, setForm] = useState({ nombre: '', precio: '', limite: '', activo: true, permite_api: false });
   const [submitting, setSubmitting] = useState(false);
 
   const fetchPlanes = useCallback(async () => {
@@ -36,7 +36,7 @@ function AdminPlanes() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ nombre: '', precio: '', limite: '', activo: true });
+    setForm({ nombre: '', precio: '', limite: '', activo: true, permite_api: false });
     setShowModal(true);
   };
 
@@ -47,6 +47,7 @@ function AdminPlanes() {
       precio: String(plan.precio),
       limite: plan.limite_facturas_mensual !== null ? String(plan.limite_facturas_mensual) : '',
       activo: plan.activo,
+      permite_api: (plan as any).permite_api ?? false,
     });
     setShowModal(true);
   };
@@ -64,6 +65,7 @@ function AdminPlanes() {
         precio: parseFloat(form.precio),
         limite_facturas_mensual: form.limite ? parseInt(form.limite) : null,
         activo: form.activo,
+        permite_api: form.permite_api,
       };
 
       const url = editing ? `/api/v1/admin/planes/${editing.id}` : '/api/v1/admin/planes';
@@ -143,6 +145,9 @@ function AdminPlanes() {
                   <label><input type="checkbox" checked={form.activo} onChange={(e) => setForm({ ...form, activo: e.target.checked })} /> Activo</label>
                 </div>
               )}
+              <div className="admin-planes-form-field">
+                <label><input type="checkbox" checked={form.permite_api} onChange={(e) => setForm({ ...form, permite_api: e.target.checked })} /> Permite integración API</label>
+              </div>
               <div className="admin-planes-form-actions">
                 <button type="button" onClick={() => setShowModal(false)}>Cancelar</button>
                 <button type="submit" className="admin-planes-btn-primary" disabled={submitting}>
