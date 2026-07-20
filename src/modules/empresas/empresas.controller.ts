@@ -192,4 +192,33 @@ export class EmpresasController {
   ): Promise<ConfiguracionResponse> {
     return this.empresasService.updateConfiguracion(user.empresa_id, dto);
   }
+
+  /**
+   * GET /api/v1/empresas/me/plan
+   * Returns the current plan details for the authenticated empresa.
+   */
+  @Get('me/plan')
+  @Roles('admin', 'facturador', 'lector')
+  @HttpCode(HttpStatus.OK)
+  async getMiPlan(@CurrentUser() user: RequestContext) {
+    const empresa = await this.empresasService.findById(user.empresa_id);
+    return {
+      plan_id: empresa?.plan_id ?? null,
+      plan: empresa?.plan ?? null,
+    };
+  }
+
+  /**
+   * PATCH /api/v1/empresas/me/plan
+   * Changes the plan for the authenticated empresa. Admin only.
+   */
+  @Patch('me/plan')
+  @Roles('admin')
+  @HttpCode(HttpStatus.OK)
+  async cambiarMiPlan(
+    @CurrentUser() user: RequestContext,
+    @Body() body: { plan_id: string },
+  ) {
+    return this.planesService.cambiarPlan(user.empresa_id, body.plan_id);
+  }
 }

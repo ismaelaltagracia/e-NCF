@@ -82,6 +82,9 @@ function Layout() {
               <NavLink to="/configuracion" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Configuración
               </NavLink>
+              <NavLink to="/mi-plan" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                Mi Plan
+              </NavLink>
               <NavLink to="/usuarios" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Usuarios
               </NavLink>

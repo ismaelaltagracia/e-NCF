@@ -13,6 +13,7 @@ import Certificacion from './pages/Certificacion';
 import Usuarios from './pages/Usuarios';
 import ApiKeys from './pages/ApiKeys';
 import Documentacion from './pages/Documentacion';
+import MiPlan from './pages/MiPlan';
 import AdminEmpresas from './pages/admin/AdminEmpresas';
 import AdminPlanes from './pages/admin/AdminPlanes';
 import AdminAuditoria from './pages/admin/AdminAuditoria';
@@ -72,6 +73,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Configuracion />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="mi-plan"
+          element={
+            <ProtectedRoute>
+              <MiPlan />
             </ProtectedRoute>
           }
         />
