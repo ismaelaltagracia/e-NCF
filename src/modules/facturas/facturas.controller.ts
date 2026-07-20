@@ -106,6 +106,7 @@ export class FacturasController {
       rnc_emisor: user.rnc,
       motivo: dto.motivo,
       correlation_id: correlationId,
+      ambiente: factura.ambiente,
     });
 
     // Req 30.4: If DGII rejects, return 422 without modifying the record
@@ -166,6 +167,7 @@ export class FacturasController {
       fecha_hasta: query.fecha_hasta,
       rnc_receptor: query.rnc_receptor,
       e_ncf: query.e_ncf,
+      ambiente: query.ambiente,
     });
   }
 

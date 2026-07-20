@@ -1,10 +1,28 @@
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Layout.css';
 
 function Layout() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, userRole, logout } = useAuth();
   const navigate = useNavigate();
+  const [permiteApi, setPermiteApi] = useState(false);
+
+  const isSuperAdmin = userRole === 'super_admin';
+
+  useEffect(() => {
+    if (isAuthenticated && !isSuperAdmin) {
+      const token = localStorage.getItem('access_token');
+      fetch('/api/v1/empresas/me/permisos', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) setPermiteApi(data.permite_api);
+        })
+        .catch(() => {});
+    }
+  }, [isAuthenticated, isSuperAdmin]);
 
   const handleLogout = async () => {
     await logout();
@@ -14,9 +32,24 @@ function Layout() {
   return (
     <div className="layout">
       <header className="layout-header">
-        <h1 className="layout-title">e-NCF</h1>
+        <h1 className="layout-title">e-NCF{isSuperAdmin ? ' · Admin' : ''}</h1>
         <nav className="layout-nav" aria-label="Navegación principal">
-          {isAuthenticated ? (
+          {isAuthenticated && isSuperAdmin ? (
+            <>
+              <NavLink to="/admin/empresas" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                Empresas
+              </NavLink>
+              <NavLink to="/admin/planes" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                Planes
+              </NavLink>
+              <NavLink to="/admin/auditoria" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                Auditoría
+              </NavLink>
+              <button className="nav-link logout-btn" onClick={handleLogout}>
+                Cerrar Sesión
+              </button>
+            </>
+          ) : isAuthenticated ? (
             <>
               <NavLink to="/facturas" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Facturas
@@ -39,9 +72,11 @@ function Layout() {
               <NavLink to="/usuarios" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Usuarios
               </NavLink>
-              <NavLink to="/api-keys" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                API Keys
-              </NavLink>
+              {permiteApi && (
+                <NavLink to="/api-keys" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                  API Keys
+                </NavLink>
+              )}
               <button className="nav-link logout-btn" onClick={handleLogout}>
                 Cerrar Sesión
               </button>

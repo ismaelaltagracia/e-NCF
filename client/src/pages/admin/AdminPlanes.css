@@ -1,0 +1,219 @@
+.admin-planes {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.admin-planes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-planes-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #213547;
+  margin-bottom: 0.5rem;
+}
+
+.admin-planes-header p {
+  color: #5f6368;
+  font-size: 0.95rem;
+}
+
+.admin-planes-btn-primary {
+  padding: 0.625rem 1.25rem;
+  background-color: #1a73e8;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.admin-planes-btn-primary:hover:not(:disabled) {
+  background-color: #1557b0;
+}
+
+.admin-planes-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-planes-table-wrapper {
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.admin-planes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.admin-planes-table thead {
+  background-color: #f8f9fa;
+}
+
+.admin-planes-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #213547;
+  border-bottom: 1px solid #dadce0;
+  white-space: nowrap;
+}
+
+.admin-planes-table td {
+  padding: 0.75rem 1rem;
+  color: #213547;
+  border-bottom: 1px solid #f1f3f4;
+  vertical-align: middle;
+}
+
+.admin-planes-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-planes-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.admin-planes-cell-name {
+  font-weight: 500;
+}
+
+.admin-planes-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.admin-planes-badge-activo {
+  background-color: #e6f4ea;
+  color: #137333;
+}
+
+.admin-planes-badge-inactivo {
+  background-color: #f1f3f4;
+  color: #5f6368;
+}
+
+.admin-planes-btn-edit {
+  padding: 0.35rem 0.75rem;
+  background-color: #ffffff;
+  color: #1a73e8;
+  border: 1px solid #1a73e8;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.admin-planes-btn-edit:hover {
+  background-color: #e8f0fe;
+}
+
+/* Modal */
+.admin-planes-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+
+.admin-planes-modal {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 440px;
+  padding: 1.5rem;
+}
+
+.admin-planes-modal h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #213547;
+  margin-bottom: 1.25rem;
+}
+
+.admin-planes-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+}
+
+.admin-planes-form-field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #213547;
+}
+
+.admin-planes-form-field input[type="text"],
+.admin-planes-form-field input[type="number"] {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #213547;
+  transition: border-color 0.2s;
+}
+
+.admin-planes-form-field input:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+}
+
+.admin-planes-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f3f4;
+}
+
+.admin-planes-form-actions button {
+  padding: 0.625rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.admin-planes-form-actions button:first-child {
+  background-color: #ffffff;
+  color: #5f6368;
+  border: 1px solid #dadce0;
+}
+
+.admin-planes-form-actions button:first-child:hover {
+  background-color: #f1f3f4;
+}
+
+@media (max-width: 640px) {
+  .admin-planes-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

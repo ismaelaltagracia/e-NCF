@@ -59,6 +59,7 @@ function FacturasLista() {
   const [filtroDesde, setFiltroDesde] = useState('');
   const [filtroHasta, setFiltroHasta] = useState('');
   const [filtroEncf, setFiltroEncf] = useState('');
+  const [filtroAmbiente, setFiltroAmbiente] = useState('');
   const limit = 10;
 
   const fetchFacturas = useCallback(async (p: number) => {
@@ -71,6 +72,7 @@ function FacturasLista() {
       if (filtroDesde) params.set('fecha_desde', filtroDesde);
       if (filtroHasta) params.set('fecha_hasta', filtroHasta);
       if (filtroEncf) params.set('e_ncf', filtroEncf);
+      if (filtroAmbiente) params.set('ambiente', filtroAmbiente);
 
       const res = await fetch(`/api/v1/facturas?${params.toString()}`, {
         headers: { Authorization: `Bearer ${getAccessToken()}` },
@@ -85,7 +87,7 @@ function FacturasLista() {
     } finally {
       setLoading(false);
     }
-  }, [filtroEstado, filtroTipo, filtroRnc, filtroDesde, filtroHasta, filtroEncf]);
+  }, [filtroEstado, filtroTipo, filtroRnc, filtroDesde, filtroHasta, filtroEncf, filtroAmbiente]);
 
   useEffect(() => {
     fetchFacturas(page);
@@ -103,6 +105,7 @@ function FacturasLista() {
     setFiltroDesde('');
     setFiltroHasta('');
     setFiltroEncf('');
+    setFiltroAmbiente('');
     setPage(1);
   };
 
@@ -130,6 +133,14 @@ function FacturasLista() {
             <option value="reintentando">Reintentando</option>
             <option value="fallido">Fallido</option>
             <option value="anulado">Anulado</option>
+          </select>
+        </div>
+        <div>
+          <label style={{ fontSize: '0.75rem', color: '#5f6368', display: 'block', marginBottom: '0.25rem' }}>Ambiente</label>
+          <select value={filtroAmbiente} onChange={(e) => setFiltroAmbiente(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #dadce0', fontSize: '0.8rem' }}>
+            <option value="">Actual</option>
+            <option value="certificacion">Certificación</option>
+            <option value="produccion">Producción</option>
           </select>
         </div>
         <div>

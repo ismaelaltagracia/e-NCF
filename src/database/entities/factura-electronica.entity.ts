@@ -76,6 +76,9 @@ export class FacturaElectronica {
   @Column({ type: 'varchar', nullable: true })
   correlation_id!: string | null;
 
+  @Column({ type: 'varchar', length: 20, default: 'certificacion' })
+  ambiente!: string; // 'certificacion' | 'produccion'
+
   @Index('idx_facturas_created_at')
   @CreateDateColumn({ type: 'timestamptz' })
   created_at!: Date;

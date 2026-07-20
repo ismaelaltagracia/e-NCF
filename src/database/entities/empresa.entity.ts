@@ -56,6 +56,9 @@ export class Empresa {
   @Column({ type: 'enum', enum: ModoNcf, default: ModoNcf.AUTOMATICO })
   modo_ncf!: ModoNcf;
 
+  @Column({ type: 'varchar', length: 20, default: 'certificacion' })
+  ambiente_dgii!: string; // 'certificacion' | 'produccion'
+
   @Column({ type: 'varchar', nullable: true })
   formato_pdf!: string | null;
 

@@ -105,6 +105,7 @@ export class EstadoPollingService {
         factura.track_id!,
         factura.empresa_id,
         correlationId,
+        factura.ambiente,
       );
 
       if (statusResponse && this.esEstadoTerminal(statusResponse.estado)) {
@@ -131,17 +132,19 @@ export class EstadoPollingService {
    * @param trackId - Track_ID de la factura
    * @param empresaId - ID de la empresa para autenticación
    * @param correlationId - ID de correlación para trazabilidad
+   * @param ambiente - Ambiente DGII de la factura
    * @returns Respuesta del servicio de estado DGII o null si no hay cambio
    */
   async consultarDgiiStatus(
     trackId: string,
     empresaId: string,
     correlationId: string,
+    ambiente?: string,
   ): Promise<DgiiStatusResponse | null> {
-    const token = await this.tokenService.obtenerToken(empresaId);
+    const token = await this.tokenService.obtenerToken(empresaId, ambiente);
 
     const result = await this.circuitBreaker.execute(
-      () => this.llamarStatusEndpoint(trackId, token, correlationId),
+      () => this.llamarStatusEndpoint(trackId, token, correlationId, ambiente),
       `status-polling:${trackId}`,
     );
 
@@ -155,8 +158,12 @@ export class EstadoPollingService {
     trackId: string,
     token: string,
     correlationId: string,
+    ambiente?: string,
   ): Promise<DgiiStatusResponse | null> {
-    const url = `${this.dgiiStatusUrl}/${trackId}`;
+    const baseUrl = ambiente === 'produccion'
+      ? this.dgiiStatusUrl.replace('CerteCF', 'ECF')
+      : this.dgiiStatusUrl;
+    const url = `${baseUrl}/${trackId}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
 

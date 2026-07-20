@@ -33,6 +33,8 @@ export const ListFacturasQuerySchema = z.object({
   rnc_receptor: z.string().optional(),
 
   e_ncf: z.string().optional(),
+
+  ambiente: z.string().optional(),
 });
 
 export type ListFacturasQueryDto = z.infer<typeof ListFacturasQuerySchema>;

@@ -35,7 +35,7 @@ export class SecuenciasNcfService {
    * Crear una nueva secuencia NCF.
    * Req 28.2
    */
-  async create(empresaId: string, dto: CreateSecuenciaNcfDto): Promise<SecuenciaNcf> {
+  async create(empresaId: string, dto: CreateSecuenciaNcfDto, ambiente?: string): Promise<SecuenciaNcf> {
     const secuencia = this.secuenciaRepo.create({
       empresa_id: empresaId,
       tipo_comprobante: dto.tipo_comprobante,
@@ -44,6 +44,7 @@ export class SecuenciasNcfService {
       numero_fin: dto.numero_fin.toString(),
       numero_actual: dto.numero_inicio.toString(),
       activo: true,
+      ambiente: ambiente || 'certificacion',
     });
 
     return this.secuenciaRepo.save(secuencia);
@@ -138,15 +139,20 @@ export class SecuenciasNcfService {
    * Asignar atómicamente el siguiente e-NCF usando SELECT FOR UPDATE.
    * Req 28.7, 28.9, 28.10, 28.11, 28.14
    */
-  async asignarSiguiente(empresaId: string, tipoComprobante: string): Promise<AsignacionResult> {
+  async asignarSiguiente(empresaId: string, tipoComprobante: string, ambiente?: string): Promise<AsignacionResult> {
     return this.dataSource.transaction(async (manager) => {
-      const secuencia = await manager
+      const qb = manager
         .createQueryBuilder(SecuenciaNcf, 'seq')
         .setLock('pessimistic_write')
         .where('seq.empresa_id = :empresaId', { empresaId })
         .andWhere('seq.tipo_comprobante = :tipoComprobante', { tipoComprobante })
-        .andWhere('seq.activo = :activo', { activo: true })
-        .getOne();
+        .andWhere('seq.activo = :activo', { activo: true });
+
+      if (ambiente) {
+        qb.andWhere('seq.ambiente = :ambiente', { ambiente });
+      }
+
+      const secuencia = await qb.getOne();
 
       if (!secuencia) {
         throw new ConflictException(

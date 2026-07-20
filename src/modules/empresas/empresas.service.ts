@@ -25,6 +25,13 @@ export class EmpresasService {
   ) {}
 
   /**
+   * Find an empresa by ID.
+   */
+  async findById(empresaId: string): Promise<Empresa | null> {
+    return this.empresaRepo.findOne({ where: { id: empresaId }, relations: ['plan'] });
+  }
+
+  /**
    * Procesa la carga de un certificado PKCS12 para una empresa.
    *
    * 1. Valida que el archivo sea un PKCS12 válido con la contraseña dada

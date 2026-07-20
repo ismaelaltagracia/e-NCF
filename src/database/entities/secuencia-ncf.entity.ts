@@ -11,7 +11,7 @@ import {
 import { Empresa } from './empresa.entity.js';
 
 @Entity('secuencias_ncf')
-@Unique('uq_secuencia_empresa_tipo_prefijo', ['empresa_id', 'tipo_comprobante', 'prefijo'])
+@Unique('uq_secuencia_empresa_tipo_prefijo_ambiente', ['empresa_id', 'tipo_comprobante', 'prefijo', 'ambiente'])
 export class SecuenciaNcf {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -37,6 +37,9 @@ export class SecuenciaNcf {
 
   @Column({ type: 'bigint' })
   numero_actual!: string;
+
+  @Column({ type: 'varchar', length: 20, default: 'certificacion' })
+  ambiente!: string; // 'certificacion' | 'produccion'
 
   @Column({ type: 'boolean', default: true })
   activo!: boolean;

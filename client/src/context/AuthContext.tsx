@@ -4,9 +4,20 @@ import type { ReactNode } from 'react';
 interface AuthContextType {
   accessToken: string | null;
   isAuthenticated: boolean;
+  userRole: string | null;
   login: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+
+function getRoleFromToken(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.rol || null;
+  } catch {
+    return null;
+  }
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logoutInProgress = useRef(false);
 
   const isAuthenticated = !!accessToken;
+  const userRole = getRoleFromToken(accessToken);
 
   const login = useCallback((token: string, refreshToken: string) => {
     setAccessToken(token);
@@ -106,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearSession]);
 
   return (
-    <AuthContext.Provider value={{ accessToken, isAuthenticated, login, logout, authFetch }}>
+    <AuthContext.Provider value={{ accessToken, isAuthenticated, userRole, login, logout, authFetch }}>
       {children}
     </AuthContext.Provider>
   );

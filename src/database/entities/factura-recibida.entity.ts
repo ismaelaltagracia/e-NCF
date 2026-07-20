@@ -53,6 +53,9 @@ export class FacturaRecibida {
   @Column({ type: 'varchar', nullable: true })
   track_id_aprobacion!: string | null;
 
+  @Column({ type: 'varchar', length: 20, default: 'certificacion' })
+  ambiente!: string; // 'certificacion' | 'produccion'
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at!: Date;
 }

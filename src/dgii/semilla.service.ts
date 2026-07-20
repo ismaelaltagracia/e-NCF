@@ -29,12 +29,24 @@ export class SemillaService {
   }
 
   /**
+   * Returns the DGII base URL based on the ambiente.
+   * Certificación uses CerteCF paths, producción uses ECF paths.
+   */
+  private getDgiiSemillaUrl(ambiente?: string): string {
+    if (ambiente === 'produccion') {
+      return 'https://ecf.dgii.gov.do/ECF/WSCertificacion.asmx';
+    }
+    return this.semillaUrl;
+  }
+
+  /**
    * Solicita una semilla XML al endpoint SOAP de la DGII.
+   * @param ambiente - Ambiente de la empresa ('certificacion' | 'produccion')
    * @returns El contenido XML completo de la respuesta SOAP con la semilla.
    * @throws ServiceUnavailableException si el endpoint es inalcanzable, timeout o respuesta no-200.
    * @throws BadGatewayException si la respuesta no es XML bien formado o falta el elemento raíz esperado.
    */
-  async solicitarSemilla(): Promise<string> {
+  async solicitarSemilla(ambiente?: string): Promise<string> {
     const correlationId = getCorrelationId() ?? 'no-correlation';
 
     let response: Response;
@@ -42,7 +54,7 @@ export class SemillaService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-      response = await fetch(this.semillaUrl, {
+      response = await fetch(this.getDgiiSemillaUrl(ambiente), {
         method: 'POST',
         headers: {
           'Content-Type': 'text/xml; charset=utf-8',

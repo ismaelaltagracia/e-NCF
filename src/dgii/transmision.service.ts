@@ -29,6 +29,7 @@ export interface TransmisionParams {
   empresa_id: string;
   xml_firmado: string;
   correlation_id: string;
+  ambiente?: string;
 }
 
 /**
@@ -85,6 +86,16 @@ export class TransmisionService {
   }
 
   /**
+   * Returns the DGII e-CF URL based on the ambiente.
+   */
+  private getDgiiEcfUrl(ambiente?: string): string {
+    if (ambiente === 'produccion') {
+      return 'https://ecf.dgii.gov.do/ECF/EmisionCF';
+    }
+    return this.dgiiEcfUrl;
+  }
+
+  /**
    * Transmite un XML firmado al endpoint e-CF de la DGII.
    *
    * @param params - Parámetros de transmisión
@@ -114,10 +125,10 @@ export class TransmisionService {
     correlationId: string,
     _isRetry: boolean,
   ): Promise<TransmisionResult> {
-    const token = await this.tokenService.obtenerToken(params.empresa_id);
+    const token = await this.tokenService.obtenerToken(params.empresa_id, params.ambiente);
 
     const result = await this.circuitBreaker.execute(
-      () => this.llamarEndpointDgii(params.xml_firmado, token, correlationId),
+      () => this.llamarEndpointDgii(params.xml_firmado, token, correlationId, params.ambiente),
       `transmision-ecf:${params.factura_id}`,
     );
 
@@ -134,13 +145,15 @@ export class TransmisionService {
     xmlFirmado: string,
     token: string,
     correlationId: string,
+    ambiente?: string,
   ): Promise<TransmisionResult> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const ecfUrl = this.getDgiiEcfUrl(ambiente);
 
     let response: Response;
     try {
-      response = await fetch(this.dgiiEcfUrl, {
+      response = await fetch(ecfUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/xml',

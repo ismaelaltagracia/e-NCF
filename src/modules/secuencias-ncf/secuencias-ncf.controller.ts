@@ -10,6 +10,8 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 import { SecuenciasNcfService } from './secuencias-ncf.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -24,12 +26,17 @@ import {
   type CreateSecuenciaNcfDto,
   type UpdateSecuenciaNcfDto,
 } from './dto/secuencias-ncf.schemas.js';
+import { Empresa } from '../../database/entities/empresa.entity.js';
 
 @ApiTags('Secuencias NCF')
 @Controller('api/v1/secuencias-ncf')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SecuenciasNcfController {
-  constructor(private readonly secuenciasNcfService: SecuenciasNcfService) {}
+  constructor(
+    private readonly secuenciasNcfService: SecuenciasNcfService,
+    @InjectRepository(Empresa)
+    private readonly empresaRepo: Repository<Empresa>,
+  ) {}
 
   /**
    * POST /api/v1/secuencias-ncf
@@ -43,7 +50,9 @@ export class SecuenciasNcfController {
     @Body(new ZodValidationPipe(CreateSecuenciaNcfSchema)) dto: CreateSecuenciaNcfDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return this.secuenciasNcfService.create(user.empresa_id, dto);
+    const empresa = await this.empresaRepo.findOne({ where: { id: user.empresa_id } });
+    const ambiente = empresa?.ambiente_dgii || 'certificacion';
+    return this.secuenciasNcfService.create(user.empresa_id, dto, ambiente);
   }
 
   /**

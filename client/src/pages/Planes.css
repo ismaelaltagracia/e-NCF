@@ -145,3 +145,35 @@
 .plan-btn--primary:hover {
   background: #1557b0;
 }
+
+/* Sections */
+.planes-section {
+  margin-bottom: 3rem;
+}
+
+.planes-section-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e8eaed;
+}
+
+.planes-section-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #213547;
+  margin-bottom: 0.25rem;
+}
+
+.planes-section-header p {
+  color: #5f6368;
+  font-size: 0.9rem;
+}
+
+.plan-card--api {
+  background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
+  border-color: #4285f4;
+}
+
+.plan-card--api .plan-badge {
+  background: #34a853;
+}

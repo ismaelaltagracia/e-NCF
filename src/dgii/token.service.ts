@@ -22,7 +22,7 @@ const REDIS_KEY_PREFIX = 'dgii_token:';
  * @see Requisitos 7.1, 7.2, 7.3, 7.4, 7.5, 7.6
  */
 export interface IDgiiTokenService {
-  obtenerToken(empresaId: string): Promise<string>;
+  obtenerToken(empresaId: string, ambiente?: string): Promise<string>;
 }
 
 /**
@@ -94,15 +94,26 @@ export class DgiiTokenService implements IDgiiTokenService {
   }
 
   /**
+   * Returns the DGII token URL based on the ambiente.
+   */
+  private getDgiiTokenUrl(ambiente?: string): string {
+    if (ambiente === 'produccion') {
+      return 'https://ecf.dgii.gov.do/ECF/WSCertificacion.asmx';
+    }
+    return this.tokenUrl;
+  }
+
+  /**
    * Obtiene un Bearer Token de la DGII para la empresa indicada.
    * Reutiliza token cacheado en Redis si está disponible.
    *
    * @param empresaId - ID de la empresa
+   * @param ambiente - Ambiente DGII de la empresa
    * @returns Bearer Token válido
    * @throws UnauthorizedException (401) si DGII rechaza la semilla firmada
    * @throws ServiceUnavailableException (503) si el endpoint DGII es inalcanzable o timeout
    */
-  async obtenerToken(empresaId: string): Promise<string> {
+  async obtenerToken(empresaId: string, ambiente?: string): Promise<string> {
     const correlationId = getCorrelationId() ?? 'no-correlation';
     const cacheKey = `${REDIS_KEY_PREFIX}${empresaId}`;
 
@@ -117,7 +128,7 @@ export class DgiiTokenService implements IDgiiTokenService {
     }
 
     // Handshake completo: semilla -> firma -> token
-    const token = await this.executeHandshake(empresaId, correlationId);
+    const token = await this.executeHandshake(empresaId, correlationId, ambiente);
 
     // Req 7.2: Almacenar token en Redis con TTL 3540s
     await this.cacheToken(cacheKey, token, correlationId);
@@ -179,9 +190,10 @@ export class DgiiTokenService implements IDgiiTokenService {
   private async executeHandshake(
     empresaId: string,
     correlationId: string,
+    ambiente?: string,
   ): Promise<string> {
     // Paso 1: Solicitar semilla (ya tiene timeout 10s interno)
-    const semillaXml = await this.semillaService.solicitarSemilla();
+    const semillaXml = await this.semillaService.solicitarSemilla(ambiente);
 
     // Paso 2: Firmar semilla con certificado de la empresa
     const semillaFirmada = await this.firmaService.firmarSemilla(
@@ -193,6 +205,7 @@ export class DgiiTokenService implements IDgiiTokenService {
     const token = await this.enviarSemillaFirmada(
       semillaFirmada,
       correlationId,
+      ambiente,
     );
 
     return token;
@@ -209,15 +222,17 @@ export class DgiiTokenService implements IDgiiTokenService {
   private async enviarSemillaFirmada(
     semillaFirmadaXml: string,
     correlationId: string,
+    ambiente?: string,
   ): Promise<string> {
     const soapEnvelope = buildTokenSoapEnvelope(semillaFirmadaXml);
+    const tokenUrl = this.getDgiiTokenUrl(ambiente);
 
     let response: Response;
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-      response = await fetch(this.tokenUrl, {
+      response = await fetch(tokenUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'text/xml; charset=utf-8',

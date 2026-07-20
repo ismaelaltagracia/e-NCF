@@ -12,6 +12,9 @@ import FacturasRecibidas from './pages/FacturasRecibidas';
 import Certificacion from './pages/Certificacion';
 import Usuarios from './pages/Usuarios';
 import ApiKeys from './pages/ApiKeys';
+import AdminEmpresas from './pages/admin/AdminEmpresas';
+import AdminPlanes from './pages/admin/AdminPlanes';
+import AdminAuditoria from './pages/admin/AdminAuditoria';
 import { useAuth } from './context/AuthContext';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -99,6 +102,31 @@ function App() {
           element={
             <ProtectedRoute>
               <ApiKeys />
+            </ProtectedRoute>
+          }
+        />
+        {/* Super Admin routes */}
+        <Route
+          path="admin/empresas"
+          element={
+            <ProtectedRoute>
+              <AdminEmpresas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/planes"
+          element={
+            <ProtectedRoute>
+              <AdminPlanes />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/auditoria"
+          element={
+            <ProtectedRoute>
+              <AdminAuditoria />
             </ProtectedRoute>
           }
         />

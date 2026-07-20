@@ -18,6 +18,9 @@ export class Plan {
   @Column({ type: 'boolean', default: true })
   activo!: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  permite_api!: boolean;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at!: Date;
 

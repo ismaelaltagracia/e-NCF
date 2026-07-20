@@ -26,7 +26,7 @@ export class ApiKeyGuard implements CanActivate {
 
     const apiKey = await this.apiKeyRepo.findOne({
       where: { key_hash: keyHash },
-      relations: ['empresa'],
+      relations: ['empresa', 'empresa.plan'],
     });
 
     if (
@@ -36,6 +36,11 @@ export class ApiKeyGuard implements CanActivate {
       apiKey.empresa.estado !== EstadoEmpresa.ACTIVO
     ) {
       throw new UnauthorizedException('API key inválida');
+    }
+
+    // Verificar que el plan permite uso de API
+    if (apiKey.empresa.plan && !apiKey.empresa.plan.permite_api) {
+      throw new UnauthorizedException('El plan actual no permite el uso de API Keys. Contacte al administrador para actualizar su plan.');
     }
 
     const requestContext: RequestContext = {

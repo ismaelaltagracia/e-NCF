@@ -146,6 +146,7 @@ export class FacturasService {
       const asignacion = await this.secuenciasNcfService.asignarSiguiente(
         empresaId,
         dto.tipo_comprobante!,
+        empresa.ambiente_dgii,
       );
       eNcf = asignacion.e_ncf;
     }
@@ -166,6 +167,7 @@ export class FacturasService {
       payload_json: dto as unknown as Record<string, unknown>,
       rnc_validado,
       correlation_id: correlationId,
+      ambiente: empresa.ambiente_dgii,
     });
 
     const savedFactura = await this.facturaRepo.save(factura);
@@ -222,6 +224,7 @@ export class FacturasService {
         empresa_id: empresaId,
         xml_firmado: xmlFirmado,
         correlation_id: correlationId,
+        ambiente: empresa.ambiente_dgii,
       });
     } catch {
       // Transmission failed (circuit breaker open, DGII unreachable, etc.)
@@ -275,9 +278,10 @@ export class FacturasService {
       fecha_hasta?: string;
       rnc_receptor?: string;
       e_ncf?: string;
+      ambiente?: string;
     },
   ) {
-    const { page, limit, estado_dgii, tipo_comprobante, fecha_desde, fecha_hasta, rnc_receptor, e_ncf } = options;
+    const { page, limit, estado_dgii, tipo_comprobante, fecha_desde, fecha_hasta, rnc_receptor, e_ncf, ambiente } = options;
     const skip = (page - 1) * limit;
 
     const qb = this.facturaRepo.createQueryBuilder('f')
@@ -308,6 +312,10 @@ export class FacturasService {
 
     if (e_ncf) {
       qb.andWhere('f.e_ncf LIKE :e_ncf', { e_ncf: `%${e_ncf}%` });
+    }
+
+    if (ambiente) {
+      qb.andWhere('f.ambiente = :ambiente', { ambiente });
     }
 
     const [data, total] = await qb.getManyAndCount();

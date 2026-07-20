@@ -25,6 +25,7 @@ export interface AnulacionParams {
   rnc_emisor: string;
   motivo: string;
   correlation_id: string;
+  ambiente?: string;
 }
 
 /**
@@ -94,11 +95,11 @@ export class AnulacionService {
     const xmlFirmado = await this.firmaService.firmarEcf(xmlAnulacion, params.empresa_id);
 
     // Step 3: Get Bearer Token
-    const token = await this.tokenService.obtenerToken(params.empresa_id);
+    const token = await this.tokenService.obtenerToken(params.empresa_id, params.ambiente);
 
     // Step 4: Transmit via CircuitBreaker
     const resultado = await this.circuitBreaker.execute(
-      () => this.transmitirAnulacion(xmlFirmado, token, params.correlation_id),
+      () => this.transmitirAnulacion(xmlFirmado, token, params.correlation_id, params.ambiente),
       `anulacion-ecf:${params.factura_id}`,
     );
 
@@ -143,19 +144,24 @@ export class AnulacionService {
    * @param xmlFirmado - XML firmado de anulación
    * @param token - Bearer Token para autenticación
    * @param correlationId - ID de correlación para trazabilidad
+   * @param ambiente - Ambiente DGII
    * @returns Resultado de la anulación
    */
   private async transmitirAnulacion(
     xmlFirmado: string,
     token: string,
     correlationId: string,
+    ambiente?: string,
   ): Promise<AnulacionResult> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const anulacionUrl = ambiente === 'produccion'
+      ? this.dgiiAnulacionUrl.replace('CerteCF', 'ECF')
+      : this.dgiiAnulacionUrl;
 
     let response: Response;
     try {
-      response = await fetch(this.dgiiAnulacionUrl, {
+      response = await fetch(anulacionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/xml',

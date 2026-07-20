@@ -47,14 +47,15 @@ export class EmpresasController {
 
   /**
    * GET /api/v1/empresas/me/ambiente-dgii
-   * Retorna el ambiente actual de la DGII (certificacion o produccion).
+   * Retorna el ambiente actual de la DGII para la empresa autenticada.
    * @see Gap 5: Toggle Certificación ↔ Producción
    */
   @Get('me/ambiente-dgii')
   @Roles('admin', 'facturador', 'lector')
   @HttpCode(HttpStatus.OK)
-  getAmbienteDgii(): { ambiente: string; urls: Record<string, string> } {
-    const ambiente = this.configService.get<string>('DGII_AMBIENTE', 'certificacion');
+  async getAmbienteDgii(@CurrentUser() user: RequestContext): Promise<{ ambiente: string; urls: Record<string, string> }> {
+    const empresa = await this.empresasService.findById(user.empresa_id);
+    const ambiente = empresa?.ambiente_dgii || this.configService.get<string>('DGII_AMBIENTE', 'certificacion');
     const basePath = ambiente === 'produccion' ? 'ECF' : 'CerteCF';
     return {
       ambiente,
@@ -64,6 +65,23 @@ export class EmpresasController {
         ecf: `https://ecf.dgii.gov.do/${basePath}/WSCertificacion/CertECFComunicacion.asmx`,
         estado: `https://ecf.dgii.gov.do/${basePath}/ConsultaEstado/ConsultaEstadoCertECF.asmx`,
       },
+    };
+  }
+
+  /**
+   * GET /api/v1/empresas/me/permisos
+   * Retorna los permisos de la empresa según su plan.
+   */
+  @Get('me/permisos')
+  @Roles('admin', 'facturador', 'lector')
+  @HttpCode(HttpStatus.OK)
+  async getPermisos(@CurrentUser() user: RequestContext) {
+    const empresa = await this.empresasService.findById(user.empresa_id);
+    const plan = empresa?.plan;
+    return {
+      permite_api: plan?.permite_api ?? false,
+      plan_nombre: plan?.nombre ?? null,
+      limite_facturas_mensual: plan?.limite_facturas_mensual ?? null,
     };
   }
 
