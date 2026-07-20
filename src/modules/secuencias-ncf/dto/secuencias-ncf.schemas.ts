@@ -34,13 +34,15 @@ export const CreateSecuenciaNcfSchema = z
 export type CreateSecuenciaNcfDto = z.infer<typeof CreateSecuenciaNcfSchema>;
 
 /**
- * Schema de validación para desactivar una secuencia NCF.
+ * Schema de validación para actualizar una secuencia NCF.
+ * Permite desactivar o editar campos de la secuencia.
  * Req 28.4
  */
 export const UpdateSecuenciaNcfSchema = z.object({
-  activo: z.literal(false, {
-    message: 'activo solo puede establecerse a false (desactivar)',
-  }),
+  activo: z.boolean().optional(),
+  prefijo: z.string().min(1).max(20).optional(),
+  numero_fin: z.number().int().positive().optional(),
+  numero_actual: z.number().int().positive().optional(),
 });
 
 export type UpdateSecuenciaNcfDto = z.infer<typeof UpdateSecuenciaNcfSchema>;

@@ -79,7 +79,14 @@ function Facturas() {
 
   const [rncReceptor, setRncReceptor] = useState('');
   const [nombreReceptor, setNombreReceptor] = useState('');
+  const [rncLookupLoading, setRncLookupLoading] = useState(false);
   const [lines, setLines] = useState<LineItem[]>([createEmptyLine()]);
+  const [tipoComprobante, setTipoComprobante] = useState('E31');
+  const [fechaVencimiento, setFechaVencimiento] = useState('');
+  const [ncfModificado, setNcfModificado] = useState('');
+  const [fechaNcfModificado, setFechaNcfModificado] = useState('');
+  const [codigoModificacion, setCodigoModificacion] = useState(1);
+  const [descuentoGlobal, setDescuentoGlobal] = useState(0);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [generalError, setGeneralError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -94,6 +101,32 @@ function Facturas() {
       tasa_itbis: 18,
     };
   }
+
+  const lookupRnc = useCallback(async (rnc: string) => {
+    if (!validateRnc(rnc)) return;
+    setRncLookupLoading(true);
+    try {
+      const token = getAccessToken();
+      const res = await fetch(`/api/v1/rnc/${rnc}/validar`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.nombre_contribuyente) {
+          setNombreReceptor(data.nombre_contribuyente);
+          setErrors((prev) => ({ ...prev, rnc_receptor: undefined, nombre_receptor: undefined }));
+        }
+      } else {
+        const body = await res.json();
+        setErrors((prev) => ({ ...prev, rnc_receptor: body.message || 'RNC no válido' }));
+        setNombreReceptor('');
+      }
+    } catch {
+      // Si falla el lookup, el usuario puede escribir el nombre manualmente
+    } finally {
+      setRncLookupLoading(false);
+    }
+  }, []);
 
   const handleAddLine = useCallback(() => {
     setLines((prev) => [...prev, createEmptyLine()]);
@@ -138,7 +171,8 @@ function Facturas() {
 
   const totalSubtotal = lines.reduce((sum, l) => sum + calcSubtotal(l), 0);
   const totalItbis = lines.reduce((sum, l) => sum + calcItbis(l), 0);
-  const grandTotal = totalSubtotal + totalItbis;
+  const descuentoMonto = totalSubtotal * (descuentoGlobal / 100);
+  const grandTotal = totalSubtotal - descuentoMonto + totalItbis;
 
   const validate = (): boolean => {
     const newErrors: FieldErrors = {};
@@ -147,10 +181,6 @@ function Facturas() {
       newErrors.rnc_receptor = 'RNC receptor requerido';
     } else if (!validateRnc(rncReceptor.trim())) {
       newErrors.rnc_receptor = 'RNC debe tener 9 u 11 dígitos numéricos';
-    }
-
-    if (!nombreReceptor.trim()) {
-      newErrors.nombre_receptor = 'Nombre receptor requerido';
     }
 
     const validLines = lines.filter(
@@ -175,9 +205,10 @@ function Facturas() {
 
     try {
       const token = getAccessToken();
-      const body = {
+      const body: Record<string, unknown> = {
         rnc_receptor: rncReceptor.trim(),
         nombre_receptor: nombreReceptor.trim(),
+        tipo_comprobante: tipoComprobante,
         items: lines
           .filter((l) => l.catalogo_item_id && l.cantidad > 0)
           .map((l) => ({
@@ -188,6 +219,22 @@ function Facturas() {
             tasa_itbis: l.tasa_itbis,
           })),
       };
+
+      if (descuentoGlobal > 0) {
+        body.descuento_global = descuentoGlobal;
+      }
+
+      if (fechaVencimiento) {
+        body.fecha_vencimiento = fechaVencimiento;
+      }
+
+      if ((tipoComprobante === 'E33' || tipoComprobante === 'E34') && ncfModificado) {
+        body.informacion_referencia = {
+          ncf_modificado: ncfModificado,
+          fecha_ncf_modificado: fechaNcfModificado,
+          codigo_modificacion: codigoModificacion,
+        };
+      }
 
       const res = await fetch('/api/v1/facturas', {
         method: 'POST',
@@ -258,6 +305,12 @@ function Facturas() {
     setRncReceptor('');
     setNombreReceptor('');
     setLines([createEmptyLine()]);
+    setTipoComprobante('E31');
+    setFechaVencimiento('');
+    setNcfModificado('');
+    setFechaNcfModificado('');
+    setCodigoModificacion(1);
+    setDescuentoGlobal(0);
     setErrors({});
     setGeneralError('');
   };
@@ -323,6 +376,81 @@ function Facturas() {
           </div>
         )}
 
+        {/* Tipo de Comprobante */}
+        <div className="facturas-row">
+          <div className="facturas-field">
+            <label htmlFor="tipo_comprobante">Tipo de Comprobante</label>
+            <select
+              id="tipo_comprobante"
+              value={tipoComprobante}
+              onChange={(e) => setTipoComprobante(e.target.value)}
+              disabled={isReadOnly}
+            >
+              <option value="E31">E31 - Factura de Crédito Fiscal</option>
+              <option value="E32">E32 - Factura de Consumo</option>
+              <option value="E33">E33 - Nota de Débito</option>
+              <option value="E34">E34 - Nota de Crédito</option>
+              <option value="E41">E41 - Compras</option>
+              <option value="E43">E43 - Gastos Menores</option>
+              <option value="E44">E44 - Regímenes Especiales</option>
+              <option value="E45">E45 - Gubernamental</option>
+              <option value="E46">E46 - Exportaciones</option>
+            </select>
+          </div>
+          <div className="facturas-field">
+            <label htmlFor="fecha_vencimiento">Fecha Vencimiento (opcional)</label>
+            <input
+              id="fecha_vencimiento"
+              type="date"
+              value={fechaVencimiento}
+              onChange={(e) => setFechaVencimiento(e.target.value)}
+              disabled={isReadOnly}
+            />
+          </div>
+        </div>
+
+        {/* Información de Referencia (solo para Notas Débito/Crédito) */}
+        {(tipoComprobante === 'E33' || tipoComprobante === 'E34') && (
+          <div className="facturas-row" style={{ backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+            <div className="facturas-field">
+              <label htmlFor="ncf_modificado">NCF Modificado</label>
+              <input
+                id="ncf_modificado"
+                type="text"
+                value={ncfModificado}
+                onChange={(e) => setNcfModificado(e.target.value)}
+                disabled={isReadOnly}
+                placeholder="E310000000001"
+              />
+            </div>
+            <div className="facturas-field">
+              <label htmlFor="fecha_ncf_modificado">Fecha NCF Modificado</label>
+              <input
+                id="fecha_ncf_modificado"
+                type="date"
+                value={fechaNcfModificado}
+                onChange={(e) => setFechaNcfModificado(e.target.value)}
+                disabled={isReadOnly}
+              />
+            </div>
+            <div className="facturas-field">
+              <label htmlFor="codigo_modificacion">Código Modificación</label>
+              <select
+                id="codigo_modificacion"
+                value={codigoModificacion}
+                onChange={(e) => setCodigoModificacion(Number(e.target.value))}
+                disabled={isReadOnly}
+              >
+                <option value={1}>1 - Disminución de precio</option>
+                <option value={2}>2 - Corrección</option>
+                <option value={3}>3 - Devolución</option>
+                <option value={4}>4 - Bonificación</option>
+                <option value={5}>5 - Descuento</option>
+              </select>
+            </div>
+          </div>
+        )}
+
         {/* Receptor info */}
         <div className="facturas-row">
           <div className="facturas-field">
@@ -333,8 +461,15 @@ function Facturas() {
               maxLength={11}
               value={rncReceptor}
               onChange={(e) => {
-                setRncReceptor(e.target.value);
+                const val = e.target.value;
+                setRncReceptor(val);
                 setErrors((prev) => ({ ...prev, rnc_receptor: undefined }));
+                // Auto-lookup cuando tiene 9 u 11 dígitos
+                if (/^\d{9}$|^\d{11}$/.test(val)) {
+                  lookupRnc(val);
+                } else {
+                  setNombreReceptor('');
+                }
               }}
               disabled={isReadOnly}
               aria-invalid={!!errors.rnc_receptor}
@@ -351,15 +486,15 @@ function Facturas() {
             <input
               id="nombre_receptor"
               type="text"
-              value={nombreReceptor}
+              value={rncLookupLoading ? 'Buscando...' : nombreReceptor}
               onChange={(e) => {
                 setNombreReceptor(e.target.value);
                 setErrors((prev) => ({ ...prev, nombre_receptor: undefined }));
               }}
-              disabled={isReadOnly}
+              disabled={isReadOnly || rncLookupLoading}
               aria-invalid={!!errors.nombre_receptor}
               aria-describedby={errors.nombre_receptor ? 'err-nombre-receptor' : undefined}
-              placeholder="Nombre o razón social"
+              placeholder="Se completa automáticamente al ingresar RNC"
             />
             <span id="err-nombre-receptor" className="facturas-field-error" role="alert">
               {errors.nombre_receptor || ''}
@@ -401,12 +536,36 @@ function Facturas() {
           </button>
         </div>
 
+        {/* Descuentos */}
+        <div className="facturas-row" style={{ marginTop: '1rem' }}>
+          <div className="facturas-field">
+            <label htmlFor="descuento_global">Descuento global (%)</label>
+            <input
+              id="descuento_global"
+              type="number"
+              min={0}
+              max={100}
+              step={0.01}
+              value={descuentoGlobal}
+              onChange={(e) => setDescuentoGlobal(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+              disabled={isReadOnly}
+              placeholder="0"
+            />
+          </div>
+        </div>
+
         {/* Totals */}
         <div className="facturas-totals" aria-label="Resumen de totales">
           <div className="facturas-totals-row">
             <span>Subtotal:</span>
             <span>RD$ {formatCurrency(totalSubtotal)}</span>
           </div>
+          {descuentoGlobal > 0 && (
+            <div className="facturas-totals-row" style={{ color: '#d93025' }}>
+              <span>Descuento ({descuentoGlobal}%):</span>
+              <span>- RD$ {formatCurrency(descuentoMonto)}</span>
+            </div>
+          )}
           <div className="facturas-totals-row">
             <span>ITBIS:</span>
             <span>RD$ {formatCurrency(totalItbis)}</span>

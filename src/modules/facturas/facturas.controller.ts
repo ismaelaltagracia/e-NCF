@@ -161,6 +161,11 @@ export class FacturasController {
       page: query.page,
       limit: query.limit,
       estado_dgii: query.estado_dgii,
+      tipo_comprobante: query.tipo_comprobante,
+      fecha_desde: query.fecha_desde,
+      fecha_hasta: query.fecha_hasta,
+      rnc_receptor: query.rnc_receptor,
+      e_ncf: query.e_ncf,
     });
   }
 
@@ -196,6 +201,22 @@ export class FacturasController {
     @CurrentUser() user: RequestContext,
   ) {
     return this.facturasService.descargarPdf(id, user.empresa_id);
+  }
+
+  /**
+   * POST /api/v1/facturas/:id/enviar-email
+   * Envía la factura por correo electrónico con PDF adjunto y código QR.
+   * Roles: admin, facturador
+   */
+  @Post(':id/enviar-email')
+  @Roles('admin', 'facturador')
+  @HttpCode(HttpStatus.OK)
+  async enviarEmail(
+    @Param('id') id: string,
+    @Body() body: { email: string },
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.facturasService.enviarFacturaEmail(id, user.empresa_id, body.email);
   }
 
   /**

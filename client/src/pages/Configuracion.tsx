@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import './Configuracion.css';
 
@@ -23,10 +23,56 @@ function Configuracion() {
       </div>
 
       <div className="configuracion-sections">
+        <AmbienteDgii />
         <CambiarCertificado />
         <CambiarPassword />
       </div>
     </div>
+  );
+}
+
+/* ---------- Ambiente DGII ---------- */
+
+function AmbienteDgii() {
+  const { accessToken } = useAuth();
+  const [ambiente, setAmbiente] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchAmbiente() {
+      try {
+        const res = await fetch('/api/v1/empresas/me/ambiente-dgii', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAmbiente(data.ambiente || 'desconocido');
+        }
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAmbiente();
+  }, [accessToken]);
+
+  return (
+    <section className="config-section">
+      <h3>Ambiente DGII</h3>
+      <p className="config-description">
+        Indica si el sistema está conectado al ambiente de certificación o producción de la DGII.
+      </p>
+      <div style={{ padding: '1rem', backgroundColor: ambiente === 'produccion' ? '#e8f5e9' : '#fff3e0', borderRadius: '8px', display: 'inline-block' }}>
+        {loading ? (
+          <span>Cargando...</span>
+        ) : (
+          <span style={{ fontWeight: 600, fontSize: '1rem' }}>
+            {ambiente === 'produccion' ? '🟢 Producción' : '🟡 Certificación'}
+          </span>
+        )}
+      </div>
+    </section>
   );
 }
 

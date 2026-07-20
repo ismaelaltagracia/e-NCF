@@ -5,7 +5,11 @@ import Onboarding from './pages/Onboarding';
 import Planes from './pages/Planes';
 import Configuracion from './pages/Configuracion';
 import Facturas from './pages/Facturas';
+import FacturasLista from './pages/FacturasLista';
 import Catalogo from './pages/Catalogo';
+import SecuenciasNcf from './pages/SecuenciasNcf';
+import FacturasRecibidas from './pages/FacturasRecibidas';
+import Certificacion from './pages/Certificacion';
 import { useAuth } from './context/AuthContext';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -28,7 +32,23 @@ function App() {
           path="facturas"
           element={
             <ProtectedRoute>
+              <FacturasLista />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="facturas/nueva"
+          element={
+            <ProtectedRoute>
               <Facturas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="facturas-recibidas"
+          element={
+            <ProtectedRoute>
+              <FacturasRecibidas />
             </ProtectedRoute>
           }
         />
@@ -45,6 +65,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Configuracion />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="secuencias-ncf"
+          element={
+            <ProtectedRoute>
+              <SecuenciasNcf />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="certificacion"
+          element={
+            <ProtectedRoute>
+              <Certificacion />
             </ProtectedRoute>
           }
         />

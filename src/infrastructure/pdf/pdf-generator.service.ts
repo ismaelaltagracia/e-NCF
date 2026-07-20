@@ -275,10 +275,16 @@ export class PdfGeneratorService implements IPdfGeneratorService {
   }
 
   /**
-   * Renderiza el pie con e-NCF y Track_ID.
+   * Renderiza el pie con e-NCF, Track_ID y Código de Seguridad.
    */
   private renderFooter(doc: PDFKit.PDFDocument, factura: FacturaElectronica): void {
+    const payload = factura.payload_json ?? {};
+    const codigoSeguridad = String(payload['codigo_seguridad'] || '');
+
     doc.fontSize(8).font('Helvetica');
+    if (codigoSeguridad) {
+      doc.text(`Código de Seguridad: ${codigoSeguridad}`, { align: 'center' });
+    }
     doc.text(`e-NCF: ${factura.e_ncf ?? 'N/A'}`, { align: 'center' });
     doc.text(`Track_ID: ${factura.track_id ?? 'N/A'}`, { align: 'center' });
   }

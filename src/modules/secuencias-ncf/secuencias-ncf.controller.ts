@@ -72,17 +72,17 @@ export class SecuenciasNcfController {
 
   /**
    * PATCH /api/v1/secuencias-ncf/:id
-   * Desactivar una secuencia NCF (solo admin).
+   * Actualizar o desactivar una secuencia NCF (solo admin).
    * Req 28.4, 28.12
    */
   @Patch(':id')
   @Roles('admin')
   @HttpCode(HttpStatus.OK)
-  async deactivate(
+  async update(
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(UpdateSecuenciaNcfSchema)) _dto: UpdateSecuenciaNcfDto,
+    @Body(new ZodValidationPipe(UpdateSecuenciaNcfSchema)) dto: UpdateSecuenciaNcfDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return this.secuenciasNcfService.deactivate(id, user.empresa_id);
+    return this.secuenciasNcfService.update(id, user.empresa_id, dto);
   }
 }

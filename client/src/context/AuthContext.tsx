@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 
 interface AuthContextType {
@@ -6,6 +6,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
+  authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -14,6 +15,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(() => {
     return localStorage.getItem('access_token');
   });
+  const logoutInProgress = useRef(false);
 
   const isAuthenticated = !!accessToken;
 
@@ -23,7 +25,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('refresh_token', refreshToken);
   }, []);
 
+  const clearSession = useCallback(() => {
+    setAccessToken(null);
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+  }, []);
+
   const logout = useCallback(async () => {
+    if (logoutInProgress.current) return;
+    logoutInProgress.current = true;
+
     const refreshToken = localStorage.getItem('refresh_token');
     const token = localStorage.getItem('access_token');
 
@@ -43,33 +54,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    setAccessToken(null);
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-  }, []);
+    clearSession();
+    logoutInProgress.current = false;
+  }, [clearSession]);
 
-  // Check token expiry on mount
+  /**
+   * Wrapper de fetch que automáticamente:
+   * 1. Agrega el Authorization header
+   * 2. Si recibe 401, limpia la sesión y redirige al login
+   */
+  const authFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const token = localStorage.getItem('access_token');
+    const headers = new Headers(init?.headers);
+    if (token && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    const response = await fetch(input, { ...init, headers });
+
+    if (response.status === 401) {
+      clearSession();
+      // Redirect to login
+      window.location.href = '/app/login';
+    }
+
+    return response;
+  }, [clearSession]);
+
+  // Check token expiry on mount and periodically
   useEffect(() => {
-    if (accessToken) {
+    const checkExpiry = () => {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
       try {
-        const payload = JSON.parse(atob(accessToken.split('.')[1]));
+        const payload = JSON.parse(atob(token.split('.')[1]));
         if (payload.exp && payload.exp * 1000 < Date.now()) {
-          // Token expired, clear it
-          setAccessToken(null);
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
+          clearSession();
+          window.location.href = '/app/login';
         }
       } catch {
-        // Invalid token format, clear
-        setAccessToken(null);
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        clearSession();
       }
-    }
-  }, [accessToken]);
+    };
+
+    checkExpiry();
+
+    // Check every 30 seconds
+    const interval = setInterval(checkExpiry, 30_000);
+    return () => clearInterval(interval);
+  }, [clearSession]);
 
   return (
-    <AuthContext.Provider value={{ accessToken, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ accessToken, isAuthenticated, login, logout, authFetch }}>
       {children}
     </AuthContext.Provider>
   );

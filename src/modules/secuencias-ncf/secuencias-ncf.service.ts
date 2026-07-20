@@ -81,6 +81,28 @@ export class SecuenciasNcfService {
   }
 
   /**
+   * Actualizar una secuencia NCF (prefijo, numero_fin, numero_actual, activo).
+   */
+  async update(
+    id: string,
+    empresaId: string,
+    dto: { activo?: boolean; prefijo?: string; numero_fin?: number; numero_actual?: number },
+  ): Promise<SecuenciaNcf> {
+    const secuencia = await this.secuenciaRepo.findOne({ where: { id, empresa_id: empresaId } });
+
+    if (!secuencia) {
+      throw new NotFoundException('Secuencia NCF no encontrada');
+    }
+
+    if (dto.activo !== undefined) secuencia.activo = dto.activo;
+    if (dto.prefijo !== undefined) secuencia.prefijo = dto.prefijo;
+    if (dto.numero_fin !== undefined) secuencia.numero_fin = String(dto.numero_fin) as any;
+    if (dto.numero_actual !== undefined) secuencia.numero_actual = String(dto.numero_actual) as any;
+
+    return this.secuenciaRepo.save(secuencia);
+  }
+
+  /**
    * Obtener estado/resumen de capacidad restante de secuencias activas.
    * Req 28.13
    */

@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { ConfigService } from '@nestjs/config';
 
 import { EmpresasService } from './empresas.service.js';
 import type { CertificadoUploadResult } from './empresas.service.js';
@@ -41,7 +42,30 @@ export class EmpresasController {
   constructor(
     private readonly empresasService: EmpresasService,
     private readonly planesService: PlanesService,
+    private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * GET /api/v1/empresas/me/ambiente-dgii
+   * Retorna el ambiente actual de la DGII (certificacion o produccion).
+   * @see Gap 5: Toggle Certificación ↔ Producción
+   */
+  @Get('me/ambiente-dgii')
+  @Roles('admin', 'facturador', 'lector')
+  @HttpCode(HttpStatus.OK)
+  getAmbienteDgii(): { ambiente: string; urls: Record<string, string> } {
+    const ambiente = this.configService.get<string>('DGII_AMBIENTE', 'certificacion');
+    const basePath = ambiente === 'produccion' ? 'ECF' : 'CerteCF';
+    return {
+      ambiente,
+      urls: {
+        semilla: `https://ecf.dgii.gov.do/${basePath}/WSCertificacion/CertECF.asmx`,
+        token: `https://ecf.dgii.gov.do/${basePath}/WSCertificacion/CertECF.asmx`,
+        ecf: `https://ecf.dgii.gov.do/${basePath}/WSCertificacion/CertECFComunicacion.asmx`,
+        estado: `https://ecf.dgii.gov.do/${basePath}/ConsultaEstado/ConsultaEstadoCertECF.asmx`,
+      },
+    };
+  }
 
   /**
    * GET /api/v1/empresas/me/uso

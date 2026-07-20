@@ -1,0 +1,145 @@
+.facturas-lista {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.facturas-lista-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.facturas-lista-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #213547;
+}
+
+.facturas-lista-btn-new {
+  padding: 0.5rem 1rem;
+  background-color: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.facturas-lista-btn-new:hover {
+  background-color: #1557b0;
+  text-decoration: none;
+  color: #fff;
+}
+
+.facturas-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.facturas-tabla th,
+.facturas-tabla td {
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.facturas-tabla th {
+  font-weight: 600;
+  color: #5f6368;
+  background-color: #f8f9fa;
+  position: sticky;
+  top: 0;
+}
+
+.facturas-tabla tr:hover {
+  background-color: #f8f9fa;
+}
+
+.facturas-tabla tr.expanded {
+  background-color: #e8f0fe;
+}
+
+.estado-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.estado-badge.enviado { background-color: #e8f0fe; color: #1a73e8; }
+.estado-badge.aceptado { background-color: #e6f4ea; color: #1e8e3e; }
+.estado-badge.aprobado { background-color: #e6f4ea; color: #1e8e3e; }
+.estado-badge.rechazado { background-color: #fce8e6; color: #d93025; }
+.estado-badge.rechazado_definitivo { background-color: #fce8e6; color: #d93025; }
+.estado-badge.reintentando { background-color: #fef7e0; color: #e37400; }
+.estado-badge.fallido { background-color: #fce8e6; color: #d93025; }
+.estado-badge.anulado { background-color: #f1f3f4; color: #5f6368; }
+
+.facturas-detalle {
+  padding: 1rem 1.5rem;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #e8eaed;
+}
+
+.facturas-detalle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.facturas-detalle-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.facturas-detalle-label {
+  font-size: 0.75rem;
+  color: #5f6368;
+  font-weight: 600;
+}
+
+.facturas-detalle-value {
+  font-size: 0.875rem;
+  color: #213547;
+  word-break: break-all;
+}
+
+.facturas-lista-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #5f6368;
+}
+
+.facturas-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.facturas-pagination button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.facturas-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.facturas-pagination span {
+  font-size: 0.85rem;
+  color: #5f6368;
+}

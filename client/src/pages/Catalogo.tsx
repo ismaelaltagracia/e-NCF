@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import Swal from 'sweetalert2';
 import './Catalogo.css';
 
 /* ---------- Types ---------- */
@@ -100,7 +101,7 @@ function Catalogo() {
       const data = await res.json();
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cargar el catálogo');
+      Swal.fire('Error', err instanceof Error ? err.message : 'Error al cargar el catálogo', 'error');
     } finally {
       setLoading(false);
     }
@@ -237,18 +238,19 @@ function Catalogo() {
           if (Object.keys(fieldErrors).length > 0) {
             setFormErrors(fieldErrors);
           } else {
-            setFormGeneralError(errBody.message || 'Error al guardar');
+            Swal.fire('Error', errBody.message || 'Error al guardar', 'error');
           }
         } else {
-          setFormGeneralError(errBody?.message || 'Error al guardar');
+          Swal.fire('Error', errBody?.message || 'Error al guardar', 'error');
         }
         return;
       }
 
       closeForm();
+      Swal.fire({ title: editingItem ? 'Actualizado' : 'Creado', text: editingItem ? 'Ítem actualizado exitosamente' : 'Ítem creado exitosamente', icon: 'success', timer: 2000, showConfirmButton: false });
       fetchItems(searchTerm, filterTipo, filterActivo);
     } catch {
-      setFormGeneralError('Error de conexión. Verifique su red e intente nuevamente.');
+      Swal.fire('Error', 'Error de conexión. Verifique su red e intente nuevamente.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -257,7 +259,18 @@ function Catalogo() {
   /* ---------- Delete (Soft Delete) ---------- */
 
   const handleDelete = async (item: CatalogItem) => {
-    if (!confirm(`¿Desea desactivar "${item.descripcion}"?`)) return;
+    const result = await Swal.fire({
+      title: '¿Desactivar ítem?',
+      html: `Se desactivará <strong>"${item.descripcion}"</strong> del catálogo.<br>Podrá reactivarlo más adelante.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d93025',
+      cancelButtonColor: '#5f6368',
+      confirmButtonText: 'Desactivar',
+      cancelButtonText: 'Cancelar',
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       const token = getAccessToken();
@@ -268,13 +281,14 @@ function Catalogo() {
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => null);
-        setError(errBody?.message || 'Error al eliminar el ítem');
+        Swal.fire('Error', errBody?.message || 'Error al eliminar el ítem', 'error');
         return;
       }
 
+      Swal.fire({ title: 'Eliminado', text: 'Ítem desactivado exitosamente', icon: 'success', timer: 2000, showConfirmButton: false });
       fetchItems(searchTerm, filterTipo, filterActivo);
     } catch {
-      setError('Error de conexión al eliminar');
+      Swal.fire('Error', 'Error de conexión al eliminar', 'error');
     }
   };
 

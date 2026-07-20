@@ -1,0 +1,153 @@
+.secuencias {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.secuencias-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.secuencias-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #213547;
+}
+
+.secuencias-btn-add {
+  padding: 0.5rem 1rem;
+  background-color: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.secuencias-btn-add:hover {
+  background-color: #1557b0;
+}
+
+.secuencias-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.secuencias-table th,
+.secuencias-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.secuencias-table th {
+  font-weight: 600;
+  color: #5f6368;
+  background-color: #f8f9fa;
+}
+
+.secuencias-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.secuencias-badge.active {
+  background-color: #e6f4ea;
+  color: #1e8e3e;
+}
+
+.secuencias-badge.warning {
+  background-color: #fef7e0;
+  color: #e37400;
+}
+
+.secuencias-badge.danger {
+  background-color: #fce8e6;
+  color: #d93025;
+}
+
+.secuencias-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #5f6368;
+}
+
+.secuencias-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.secuencias-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.secuencias-modal h3 {
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  color: #213547;
+}
+
+.secuencias-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.secuencias-btn-cancel {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #5f6368;
+}
+
+.secuencias-btn-save {
+  padding: 0.5rem 1rem;
+  background-color: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.secuencias-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secuencias-progress {
+  width: 100%;
+  height: 6px;
+  background-color: #e8eaed;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.secuencias-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}

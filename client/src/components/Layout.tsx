@@ -21,8 +21,17 @@ function Layout() {
               <NavLink to="/facturas" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Facturas
               </NavLink>
+              <NavLink to="/facturas-recibidas" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                Recibidas
+              </NavLink>
               <NavLink to="/catalogo" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Catálogo
+              </NavLink>
+              <NavLink to="/secuencias-ncf" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                NCF
+              </NavLink>
+              <NavLink to="/certificacion" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                Certificación
               </NavLink>
               <NavLink to="/configuracion" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Configuración

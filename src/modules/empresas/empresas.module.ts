@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { EmpresasService } from './empresas.service.js';
 import { EmpresasController } from './empresas.controller.js';
 import { EncfValidationService } from './encf-validation.service.js';
@@ -11,6 +12,7 @@ import { PlanesModule } from '../planes/planes.module.js';
 
 @Module({
   imports: [
+    ConfigModule,
     TypeOrmModule.forFeature([Empresa]),
     AuthModule,
     InfrastructureModule,

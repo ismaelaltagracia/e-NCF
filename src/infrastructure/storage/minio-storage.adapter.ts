@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  CreateBucketCommand,
+  HeadBucketCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { IStorageProvider } from './storage.interface.js';
@@ -17,8 +19,15 @@ import { IStorageProvider } from './storage.interface.js';
  * @see Requisito 24.4
  */
 @Injectable()
-export class MinioStorageAdapter implements IStorageProvider {
+export class MinioStorageAdapter implements IStorageProvider, OnModuleInit {
   private readonly client: S3Client;
+  private readonly logger = new Logger(MinioStorageAdapter.name);
+  private readonly bucketXml: string;
+  private readonly bucketPdf: string;
+
+  private readonly internalEndpoint: string;
+  private readonly publicEndpoint: string;
+  private readonly publicClient: S3Client;
 
   constructor(private readonly configService: ConfigService) {
     const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
@@ -26,15 +35,50 @@ export class MinioStorageAdapter implements IStorageProvider {
     const useSsl = this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
     const protocol = useSsl ? 'https' : 'http';
 
+    this.bucketXml = this.configService.get<string>('MINIO_BUCKET_XML', 'facturas-xml');
+    this.bucketPdf = this.configService.get<string>('MINIO_BUCKET_PDF', 'facturas-pdf');
+    this.internalEndpoint = `${protocol}://${endpoint}:${port}`;
+    this.publicEndpoint = this.configService.get<string>(
+      'MINIO_PUBLIC_ENDPOINT',
+      `http://localhost:${port}`,
+    );
+
+    const credentials = {
+      accessKeyId: this.configService.get<string>('MINIO_ACCESS_KEY', ''),
+      secretAccessKey: this.configService.get<string>('MINIO_SECRET_KEY', ''),
+    };
+    const region = this.configService.get<string>('MINIO_REGION', 'us-east-1');
+
+    // Internal client for upload/download (uses Docker hostname)
     this.client = new S3Client({
-      endpoint: `${protocol}://${endpoint}:${port}`,
-      region: this.configService.get<string>('MINIO_REGION', 'us-east-1'),
-      credentials: {
-        accessKeyId: this.configService.get<string>('MINIO_ACCESS_KEY', ''),
-        secretAccessKey: this.configService.get<string>('MINIO_SECRET_KEY', ''),
-      },
+      endpoint: this.internalEndpoint,
+      region,
+      credentials,
       forcePathStyle: true,
     });
+
+    // Public client for presigned URLs (uses localhost/public hostname)
+    this.publicClient = new S3Client({
+      endpoint: this.publicEndpoint,
+      region,
+      credentials,
+      forcePathStyle: true,
+    });
+  }
+
+  async onModuleInit(): Promise<void> {
+    for (const bucket of [this.bucketXml, this.bucketPdf]) {
+      try {
+        await this.client.send(new HeadBucketCommand({ Bucket: bucket }));
+      } catch {
+        try {
+          await this.client.send(new CreateBucketCommand({ Bucket: bucket }));
+          this.logger.log(`Bucket "${bucket}" creado automáticamente`);
+        } catch (err) {
+          this.logger.warn(`No se pudo crear bucket "${bucket}": ${err instanceof Error ? err.message : err}`);
+        }
+      }
+    }
   }
 
   async upload(bucket: string, key: string, data: Buffer, contentType: string): Promise<string> {
@@ -75,7 +119,8 @@ export class MinioStorageAdapter implements IStorageProvider {
       Key: key,
     });
 
-    return getSignedUrl(this.client, command, { expiresIn: ttlSeconds });
+    // Use public client so the signature matches the public endpoint
+    return getSignedUrl(this.publicClient, command, { expiresIn: ttlSeconds });
   }
 
   async delete(bucket: string, key: string): Promise<void> {

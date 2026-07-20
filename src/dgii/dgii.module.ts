@@ -10,10 +10,13 @@ import { CircuitBreakerService } from './circuit-breaker.service.js';
 import { TransmisionService } from './transmision.service.js';
 import { RncValidatorService } from './rnc-validator.service.js';
 import { RncValidatorController } from './rnc-validator.controller.js';
+import { RecepcionController } from './recepcion.controller.js';
 import { EstadoPollingService } from './estado-polling.service.js';
 import { AnulacionService } from './anulacion.service.js';
 import { Empresa } from '../database/entities/empresa.entity.js';
 import { FacturaElectronica } from '../database/entities/factura-electronica.entity.js';
+import { RncContribuyente } from '../database/entities/rnc-contribuyente.entity.js';
+import { FacturaRecibida } from '../database/entities/factura-recibida.entity.js';
 import { InfrastructureModule } from '../infrastructure/infrastructure.module.js';
 import { AuthModule } from '../modules/auth/auth.module.js';
 import { WebhooksModule } from '../modules/webhooks/webhooks.module.js';
@@ -30,12 +33,12 @@ import { WebhooksModule } from '../modules/webhooks/webhooks.module.js';
   imports: [
     ConfigModule,
     ScheduleModule.forRoot(),
-    TypeOrmModule.forFeature([Empresa, FacturaElectronica]),
+    TypeOrmModule.forFeature([Empresa, FacturaElectronica, RncContribuyente, FacturaRecibida]),
     InfrastructureModule,
     AuthModule,
     WebhooksModule,
   ],
-  controllers: [RncValidatorController],
+  controllers: [RncValidatorController, RecepcionController],
   providers: [
     SemillaService,
     FirmaService,

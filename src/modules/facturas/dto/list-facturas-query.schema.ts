@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { EstadoDgii } from '../../../database/enums.js';
+import { EstadoDgii, TipoComprobante } from '../../../database/enums.js';
 
 /**
  * Schema de validación para query params de listado de facturas.
- * Soporta paginación y filtro por estado DGII.
+ * Soporta paginación y filtros por estado DGII, fecha, RNC, tipo comprobante y e-NCF.
  *
  * @see Requirements 18.5, 18.7
  */
@@ -23,6 +23,16 @@ export const ListFacturasQuerySchema = z.object({
     .refine((val) => val >= 1, { message: 'limit debe ser >= 1' }),
 
   estado_dgii: z.nativeEnum(EstadoDgii).optional(),
+
+  tipo_comprobante: z.nativeEnum(TipoComprobante).optional(),
+
+  fecha_desde: z.string().optional(),
+
+  fecha_hasta: z.string().optional(),
+
+  rnc_receptor: z.string().optional(),
+
+  e_ncf: z.string().optional(),
 });
 
 export type ListFacturasQueryDto = z.infer<typeof ListFacturasQuerySchema>;

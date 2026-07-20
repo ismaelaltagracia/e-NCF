@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { XMLBuilder, XMLParser } from 'fast-xml-parser';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { formatDateDgii } from '../common/utils/date-format.js';
 
 /**
  * Interfaz pública del servicio de conversión JSON→XML.
@@ -105,6 +106,17 @@ export class ConversorXmlService implements IConversorXmlService, OnModuleInit, 
 
       // Validación post-conversión: parsear el XML generado para verificar integridad
       this.validarXmlGenerado(xmlString);
+
+      // Validación estructural: verificar elementos requeridos y formatos
+      const validacion = this.validarEstructuraXml(xmlString);
+      if (!validacion.valido) {
+        this.logger.warn(`Validación estructural falló: ${validacion.errores.join(', ')}`);
+        throw new UnprocessableEntityException({
+          statusCode: 422,
+          message: `El XML generado no cumple con la estructura requerida por la DGII`,
+          campos_error: validacion.errores,
+        });
+      }
 
       return xmlString;
     } catch (error) {
@@ -244,6 +256,84 @@ export class ConversorXmlService implements IConversorXmlService, OnModuleInit, 
   }
 
   /**
+   * Valida la estructura del XML generado antes de transmisión.
+   * Verifica que los elementos requeridos existan, atributos estén presentes,
+   * y campos numéricos tengan formato adecuado.
+   *
+   * @param xml - XML string a validar
+   * @returns Objeto con resultado de validación y errores encontrados
+   * @see Gap 1: XSD structural validation
+   */
+  validarEstructuraXml(xml: string): { valido: boolean; errores: string[] } {
+    const errores: string[] = [];
+
+    // Verificar elementos raíz requeridos
+    if (!xml.includes('<ECF')) {
+      errores.push('Falta elemento raíz ECF');
+    }
+    if (!xml.includes('<Encabezado>')) {
+      errores.push('Falta elemento Encabezado');
+    }
+    if (!xml.includes('<Emisor>')) {
+      errores.push('Falta elemento Emisor');
+    }
+    if (!xml.includes('<Comprador>')) {
+      errores.push('Falta elemento Comprador');
+    }
+    if (!xml.includes('<Totales>')) {
+      errores.push('Falta elemento Totales');
+    }
+    if (!xml.includes('<DetallesItems>')) {
+      errores.push('Falta elemento DetallesItems');
+    }
+
+    // Verificar sub-elementos requeridos del Encabezado
+    if (!xml.includes('<IdDoc>')) {
+      errores.push('Falta elemento IdDoc dentro de Encabezado');
+    }
+    if (!xml.includes('<eNCF>')) {
+      errores.push('Falta elemento eNCF dentro de IdDoc');
+    }
+    if (!xml.includes('<TipoeCF>')) {
+      errores.push('Falta elemento TipoeCF dentro de IdDoc');
+    }
+
+    // Verificar elementos requeridos del Emisor
+    if (!xml.includes('<RNCEmisor>')) {
+      errores.push('Falta elemento RNCEmisor dentro de Emisor');
+    }
+    if (!xml.includes('<RazonSocialEmisor>')) {
+      errores.push('Falta elemento RazonSocialEmisor dentro de Emisor');
+    }
+
+    // Verificar elementos requeridos del Comprador
+    if (!xml.includes('<RNCComprador>')) {
+      errores.push('Falta elemento RNCComprador dentro de Comprador');
+    }
+
+    // Verificar elementos requeridos de Totales
+    if (!xml.includes('<MontoTotal>')) {
+      errores.push('Falta elemento MontoTotal dentro de Totales');
+    }
+
+    // Verificar formato numérico en campos de totales
+    const montoTotalMatch = xml.match(/<MontoTotal>([^<]+)<\/MontoTotal>/);
+    if (montoTotalMatch && !/^\d+\.\d{2}$/.test(montoTotalMatch[1])) {
+      errores.push(`MontoTotal tiene formato incorrecto: "${montoTotalMatch[1]}" (debe ser N.NN)`);
+    }
+
+    // Verificar atributo xmlns en ECF
+    if (!xml.includes('xmlns')) {
+      errores.push('Falta atributo xmlns en elemento ECF');
+    }
+
+    return {
+      valido: errores.length === 0,
+      errores,
+    };
+  }
+
+  /**
    * Construye la estructura XML del e-CF a partir del payload JSON.
    * Mapea los campos del JSON a la estructura esperada por la DGII,
    * incluyendo el namespace y el e-NCF.
@@ -256,8 +346,10 @@ export class ConversorXmlService implements IConversorXmlService, OnModuleInit, 
       ECF: {
         '@_xmlns': DGII_ECF_NAMESPACE,
         Encabezado: this.construirEncabezado(payload, encf),
-        ...(payload['DetallesItems'] ? { DetallesItems: payload['DetallesItems'] } : {}),
-        ...(payload['InformacionReferencia'] ? { InformacionReferencia: payload['InformacionReferencia'] } : {}),
+        DetallesItems: this.construirDetallesItems(payload),
+        ...(payload['InformacionReferencia'] || payload['informacion_referencia']
+          ? { InformacionReferencia: this.construirInformacionReferencia(payload) }
+          : {}),
         ...(payload['Subtotales'] ? { Subtotales: payload['Subtotales'] } : {}),
         ...(payload['DescuentosORecargos'] ? { DescuentosORecargos: payload['DescuentosORecargos'] } : {}),
         ...(payload['Paginacion'] ? { Paginacion: payload['Paginacion'] } : {}),
@@ -270,23 +362,123 @@ export class ConversorXmlService implements IConversorXmlService, OnModuleInit, 
   }
 
   /**
-   * Construye la sección Encabezado del e-CF.
+   * Construye la sección Encabezado completa del e-CF conforme a la DGII.
+   * Estructura: Version, IdDoc, Emisor, Comprador, Totales
+   * @see Gap 4: Complete XML Header structure
    */
   private construirEncabezado(
     payload: Record<string, unknown>,
     encf: string,
   ): Record<string, unknown> {
     const encabezadoInput = (payload['Encabezado'] || {}) as Record<string, unknown>;
-    const idDoc = (encabezadoInput['IdDoc'] || {}) as Record<string, unknown>;
+    const idDocInput = (encabezadoInput['IdDoc'] || {}) as Record<string, unknown>;
+    const emisorInput = (encabezadoInput['Emisor'] || {}) as Record<string, unknown>;
+    const compradorInput = (encabezadoInput['Comprador'] || {}) as Record<string, unknown>;
+    const totalesInput = (encabezadoInput['Totales'] || {}) as Record<string, unknown>;
+
+    // Extraer tipo de comprobante del e-NCF (primeros 3 caracteres: E31, E32, etc.)
+    const tipoeCF = (idDocInput['TipoeCF'] as string) ||
+      (payload['tipo_comprobante'] as string) ||
+      encf.substring(0, 3);
+
+    // Construir IdDoc
+    const idDoc: Record<string, unknown> = {
+      TipoeCF: tipoeCF,
+      eNCF: encf,
+      ...(idDocInput['FechaVencimientoSecuencia']
+        ? { FechaVencimientoSecuencia: idDocInput['FechaVencimientoSecuencia'] }
+        : {}),
+      ...(tipoeCF === 'E34' ? { IndicadorNotaCredito: idDocInput['IndicadorNotaCredito'] ?? '' } : {}),
+      ...(idDocInput['TipoIngresos'] ? { TipoIngresos: idDocInput['TipoIngresos'] } : { TipoIngresos: '01' }),
+      ...(idDocInput['TipoPago'] ? { TipoPago: idDocInput['TipoPago'] } : { TipoPago: '1' }),
+      ...(payload['fecha_vencimiento']
+        ? { FechaLimitePago: formatDateDgii(payload['fecha_vencimiento'] as string) }
+        : idDocInput['FechaLimitePago']
+          ? { FechaLimitePago: idDocInput['FechaLimitePago'] }
+          : {}),
+    };
+
+    // Construir Emisor
+    const rncEmisor = (emisorInput['RNCEmisor'] as string) || (payload['rnc_emisor'] as string) || '';
+    const razonSocialEmisor = (emisorInput['RazonSocialEmisor'] as string) || (payload['razon_social_emisor'] as string) || '';
+    const emisor: Record<string, unknown> = {
+      RNCEmisor: rncEmisor,
+      RazonSocialEmisor: razonSocialEmisor,
+      ...(emisorInput['DireccionEmisor'] ? { DireccionEmisor: emisorInput['DireccionEmisor'] } : {}),
+      FechaEmision: (emisorInput['FechaEmision'] as string) || formatDateDgii(new Date()),
+    };
+
+    // Construir Comprador
+    const rncComprador = (compradorInput['RNCComprador'] as string) || (payload['rnc_receptor'] as string) || '';
+    const razonSocialComprador = (compradorInput['RazonSocialComprador'] as string) || (payload['nombre_receptor'] as string) || '';
+    const comprador: Record<string, unknown> = {
+      RNCComprador: rncComprador,
+      ...(razonSocialComprador ? { RazonSocialComprador: razonSocialComprador } : {}),
+    };
+
+    // Construir Totales
+    const subtotal = Number(payload['subtotal'] || totalesInput['MontoGravadoTotal'] || 0);
+    const montoItbis = Number(payload['monto_itbis'] || totalesInput['TotalITBIS'] || 0);
+    const montoTotal = Number(payload['monto_total'] || totalesInput['MontoTotal'] || 0);
+    const totales: Record<string, unknown> = {
+      MontoGravadoTotal: (totalesInput['MontoGravadoTotal'] as string) || subtotal.toFixed(2),
+      MontoGravadoI1: (totalesInput['MontoGravadoI1'] as string) || subtotal.toFixed(2),
+      ITBIS1: (totalesInput['ITBIS1'] as string) || montoItbis.toFixed(2),
+      TotalITBIS: (totalesInput['TotalITBIS'] as string) || montoItbis.toFixed(2),
+      MontoTotal: (totalesInput['MontoTotal'] as string) || montoTotal.toFixed(2),
+    };
 
     return {
-      IdDoc: {
-        ...idDoc,
-        eNCF: encf,
-      },
-      ...(encabezadoInput['Emisor'] ? { Emisor: encabezadoInput['Emisor'] } : {}),
-      ...(encabezadoInput['Comprador'] ? { Comprador: encabezadoInput['Comprador'] } : {}),
-      ...(encabezadoInput['Totales'] ? { Totales: encabezadoInput['Totales'] } : {}),
+      Version: '1.0',
+      IdDoc: idDoc,
+      Emisor: emisor,
+      Comprador: comprador,
+      Totales: totales,
+    };
+  }
+
+  /**
+   * Construye la sección DetallesItems del e-CF.
+   */
+  private construirDetallesItems(payload: Record<string, unknown>): Record<string, unknown> {
+    // Si ya viene en formato DGII, usarlo directamente
+    if (payload['DetallesItems']) {
+      return payload['DetallesItems'] as Record<string, unknown>;
+    }
+
+    // Convertir desde formato de la SPA (items array)
+    const items = (payload['items'] as Array<Record<string, unknown>>) || [];
+    const xmlItems = items.map((item, index) => ({
+      NumeroLinea: index + 1,
+      IndicadorFacturacion: 1,
+      NombreItem: (item['descripcion'] as string) || (item['nombre'] as string) || '',
+      CantidadItem: Number(item['cantidad'] || 1).toFixed(2),
+      PrecioUnitarioItem: Number(item['precio_unitario'] || 0).toFixed(2),
+      MontoItem: (Number(item['cantidad'] || 1) * Number(item['precio_unitario'] || 0)).toFixed(2),
+    }));
+
+    return { Item: xmlItems.length === 1 ? xmlItems[0] : xmlItems };
+  }
+
+  /**
+   * Construye la sección InformacionReferencia (para Notas de Crédito/Débito).
+   */
+  private construirInformacionReferencia(payload: Record<string, unknown>): Record<string, unknown> {
+    // Si ya viene en formato DGII
+    if (payload['InformacionReferencia']) {
+      return payload['InformacionReferencia'] as Record<string, unknown>;
+    }
+
+    // Convertir desde formato de la SPA
+    const ref = payload['informacion_referencia'] as Record<string, unknown> | undefined;
+    if (!ref) return {};
+
+    return {
+      NCFModificado: ref['ncf_modificado'] || '',
+      FechaNCFModificado: ref['fecha_ncf_modificado']
+        ? formatDateDgii(ref['fecha_ncf_modificado'] as string)
+        : '',
+      CodigoModificacion: ref['codigo_modificacion'] || 1,
     };
   }
 

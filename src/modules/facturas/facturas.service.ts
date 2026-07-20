@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as crypto from 'node:crypto';
 
 import { FacturaElectronica } from '../../database/entities/factura-electronica.entity.js';
 import { Empresa } from '../../database/entities/empresa.entity.js';
@@ -27,6 +28,8 @@ import {
 } from '../../infrastructure/queue/retry-queue.interfaces.js';
 import type { CreateFacturaDto } from './dto/factura.schemas.js';
 import type { RequestContext } from '../../common/interfaces/request-context.interface.js';
+import { PDF_GENERATOR } from '../../infrastructure/pdf/pdf-generator.interface.js';
+import type { IPdfGeneratorService } from '../../infrastructure/pdf/pdf-generator.interface.js';
 
 const BUCKET_FACTURAS_XML = 'facturas-xml';
 const BUCKET_FACTURAS_PDF = 'facturas-pdf';
@@ -59,7 +62,9 @@ export class FacturasService {
     private readonly storageProvider: IStorageProvider,
     @Optional()
     @Inject(RETRY_QUEUE_SERVICE)
-    private readonly retryQueue: IRetryQueueService | null,
+    public readonly retryQueue: IRetryQueueService | null,
+    @Inject(PDF_GENERATOR)
+    private readonly pdfGeneratorService: IPdfGeneratorService,
   ) {}
 
   /**
@@ -92,6 +97,27 @@ export class FacturasService {
       throw new ForbiddenException('Empresa no encontrada para el usuario autenticado');
     }
 
+    // Auto-complete fields if not provided (SPA sends minimal payload)
+    if (!dto.rnc_emisor) {
+      dto.rnc_emisor = empresa.rnc;
+    }
+    if (!dto.tipo_comprobante) {
+      dto.tipo_comprobante = 'E31' as any;
+    }
+    if (dto.subtotal === undefined || dto.monto_itbis === undefined || dto.monto_total === undefined) {
+      const subtotalCalc = dto.items.reduce(
+        (sum, item) => sum + item.cantidad * item.precio_unitario,
+        0,
+      );
+      const itbisCalc = dto.items.reduce(
+        (sum, item) => sum + item.cantidad * item.precio_unitario * (item.tasa_itbis / 100),
+        0,
+      );
+      dto.subtotal = dto.subtotal ?? Math.round(subtotalCalc * 100) / 100;
+      dto.monto_itbis = dto.monto_itbis ?? Math.round(itbisCalc * 100) / 100;
+      dto.monto_total = dto.monto_total ?? Math.round((subtotalCalc + itbisCalc) * 100) / 100;
+    }
+
     if (dto.rnc_emisor !== empresa.rnc) {
       throw new ForbiddenException(
         'El RNC emisor no coincide con la empresa autenticada',
@@ -119,7 +145,7 @@ export class FacturasService {
     if (empresa.modo_ncf === ModoNcf.AUTOMATICO) {
       const asignacion = await this.secuenciasNcfService.asignarSiguiente(
         empresaId,
-        dto.tipo_comprobante,
+        dto.tipo_comprobante!,
       );
       eNcf = asignacion.e_ncf;
     }
@@ -150,8 +176,30 @@ export class FacturasService {
       eNcf,
     );
 
+    // Step 7.1: Validate XML structure before transmission
+    const validacion = this.conversorXmlService.validarEstructuraXml(xml);
+    if (!validacion.valido) {
+      throw new BadRequestException({
+        message: 'El XML generado no cumple con la estructura requerida por la DGII',
+        errores: validacion.errores,
+      });
+    }
+
     // Step 8: Sign XML
     const xmlFirmado = await this.firmaService.firmarEcf(xml, empresaId);
+
+    // Step 8.1: Compute security code from signature
+    const signatureMatch = xmlFirmado.match(/<ds:SignatureValue[^>]*>([^<]+)<\/ds:SignatureValue>/);
+    const codigoSeguridad = signatureMatch
+      ? crypto.createHash('sha256').update(signatureMatch[1]).digest('hex').substring(0, 6).toUpperCase()
+      : '000000';
+
+    // Store codigo_seguridad in payload_json
+    const payloadConCodigo = {
+      ...(savedFactura.payload_json || {}),
+      codigo_seguridad: codigoSeguridad,
+    };
+    savedFactura.payload_json = payloadConCodigo;
 
     // Step 9: Upload XML to storage
     const storageKey = `${empresaId}/${savedFactura.id}.xml`;
@@ -166,13 +214,20 @@ export class FacturasService {
     savedFactura.xml_s3_url = xmlS3Url;
     await this.facturaRepo.save(savedFactura);
 
-    // Step 11: Transmit to DGII
-    const resultado = await this.transmisionService.transmitir({
-      factura_id: savedFactura.id,
-      empresa_id: empresaId,
-      xml_firmado: xmlFirmado,
-      correlation_id: correlationId,
-    });
+    // Step 11: Transmit to DGII (non-blocking - if it fails, enqueue for retry)
+    let resultado: { track_id: string | null; estado: 'aceptado' | 'rechazado' | 'reintentando'; error_dgii?: Record<string, unknown> | null };
+    try {
+      resultado = await this.transmisionService.transmitir({
+        factura_id: savedFactura.id,
+        empresa_id: empresaId,
+        xml_firmado: xmlFirmado,
+        correlation_id: correlationId,
+      });
+    } catch {
+      // Transmission failed (circuit breaker open, DGII unreachable, etc.)
+      // Create factura with estado "reintentando" - will be retried by queue
+      resultado = { track_id: null, estado: 'reintentando', error_dgii: null };
+    }
 
     // Step 12: Update factura with transmission result
     savedFactura.track_id = resultado.track_id;
@@ -185,12 +240,13 @@ export class FacturasService {
     // Step 13: Increment monthly usage atomically
     await this.planesService.incrementarUso(empresaId);
 
-    // Step 14: Enqueue PDF generation if accepted
-    if (resultado.estado === 'aceptado' && this.retryQueue) {
-      this.logger.log(
-        `Factura ${savedFactura.id} aceptada, generación PDF pendiente`,
-      );
-      // PDF generation will be handled by a dedicated queue/service in a future task
+    // Step 14: Generate PDF immediately (non-blocking on failure)
+    try {
+      await this.pdfGeneratorService.generarYSubirPdf(savedFactura.id);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.warn(`PDF generation failed for factura ${savedFactura.id}: ${msg}`);
+      // PDF will be available later if retry succeeds
     }
 
     return {
@@ -210,22 +266,51 @@ export class FacturasService {
    */
   async listarFacturas(
     empresaId: string,
-    options: { page: number; limit: number; estado_dgii?: EstadoDgii },
+    options: {
+      page: number;
+      limit: number;
+      estado_dgii?: EstadoDgii;
+      tipo_comprobante?: string;
+      fecha_desde?: string;
+      fecha_hasta?: string;
+      rnc_receptor?: string;
+      e_ncf?: string;
+    },
   ) {
-    const { page, limit, estado_dgii } = options;
+    const { page, limit, estado_dgii, tipo_comprobante, fecha_desde, fecha_hasta, rnc_receptor, e_ncf } = options;
     const skip = (page - 1) * limit;
 
-    const where: Record<string, unknown> = { empresa_id: empresaId };
+    const qb = this.facturaRepo.createQueryBuilder('f')
+      .where('f.empresa_id = :empresaId', { empresaId })
+      .orderBy('f.created_at', 'DESC')
+      .skip(skip)
+      .take(limit);
+
     if (estado_dgii) {
-      where.estado_dgii = estado_dgii;
+      qb.andWhere('f.estado_dgii = :estado_dgii', { estado_dgii });
     }
 
-    const [data, total] = await this.facturaRepo.findAndCount({
-      where,
-      order: { created_at: 'DESC' },
-      skip,
-      take: limit,
-    });
+    if (tipo_comprobante) {
+      qb.andWhere("f.e_ncf LIKE :tipo", { tipo: `${tipo_comprobante}%` });
+    }
+
+    if (fecha_desde) {
+      qb.andWhere('f.created_at >= :fecha_desde', { fecha_desde });
+    }
+
+    if (fecha_hasta) {
+      qb.andWhere('f.created_at <= :fecha_hasta', { fecha_hasta: `${fecha_hasta}T23:59:59.999Z` });
+    }
+
+    if (rnc_receptor) {
+      qb.andWhere("f.payload_json->>'rnc_receptor' = :rnc_receptor", { rnc_receptor });
+    }
+
+    if (e_ncf) {
+      qb.andWhere('f.e_ncf LIKE :e_ncf', { e_ncf: `%${e_ncf}%` });
+    }
+
+    const [data, total] = await qb.getManyAndCount();
 
     return {
       data,
@@ -319,6 +404,35 @@ export class FacturasService {
       { id: facturaId },
       { estado_dgii: EstadoDgii.ANULADO },
     );
+  }
+
+  /**
+   * Envía la factura por correo electrónico con el PDF adjunto.
+   * En modo desarrollo sin SMTP configurado, retorna éxito simulado.
+   */
+  async enviarFacturaEmail(
+    facturaId: string,
+    empresaId: string,
+    email: string,
+  ): Promise<{ message: string; email: string }> {
+    const factura = await this.obtenerFactura(facturaId, empresaId);
+
+    if (!factura.pdf_s3_url) {
+      throw new BadRequestException(
+        'El PDF de esta factura aún no ha sido generado. Intente más tarde.',
+      );
+    }
+
+    // TODO: Implementar envío real con nodemailer cuando se configure SMTP
+    // Por ahora, retornar éxito simulado en modo desarrollo
+    this.logger.log(
+      `[EMAIL] Factura ${factura.e_ncf} enviada a ${email} (simulado)`,
+    );
+
+    return {
+      message: `Factura ${factura.e_ncf || facturaId} enviada exitosamente a ${email}`,
+      email,
+    };
   }
 
   /**

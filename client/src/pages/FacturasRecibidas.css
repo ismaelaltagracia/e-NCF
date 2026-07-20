@@ -1,0 +1,177 @@
+.facturas-recibidas {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.facturas-recibidas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.facturas-recibidas-header h2 {
+  margin: 0;
+  color: #202124;
+}
+
+.facturas-recibidas-btn-toggle {
+  padding: 0.5rem 1rem;
+  background-color: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.facturas-recibidas-btn-toggle:hover {
+  background-color: #1557b0;
+}
+
+.facturas-recibidas-form {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.facturas-recibidas-form h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: #202124;
+}
+
+.facturas-recibidas-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.facturas-recibidas-form-field label {
+  display: block;
+  font-size: 0.75rem;
+  color: #5f6368;
+  margin-bottom: 0.25rem;
+}
+
+.facturas-recibidas-form-field input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.facturas-recibidas-form-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.facturas-recibidas-form-actions button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.facturas-recibidas-form-actions button[type='submit'] {
+  background-color: #1a73e8;
+  color: #fff;
+}
+
+.facturas-recibidas-form-actions button[type='button'] {
+  background-color: #fff;
+  color: #5f6368;
+  border: 1px solid #dadce0;
+}
+
+.facturas-recibidas-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.facturas-recibidas-tabla th,
+.facturas-recibidas-tabla td {
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.facturas-recibidas-tabla th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #5f6368;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.facturas-recibidas-tabla tbody tr:hover {
+  background-color: #f1f3f4;
+}
+
+.estado-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.estado-badge.pendiente {
+  background-color: #fef7e0;
+  color: #b06000;
+}
+
+.estado-badge.aprobada {
+  background-color: #e6f4ea;
+  color: #1e8e3e;
+}
+
+.estado-badge.rechazada {
+  background-color: #fce8e6;
+  color: #d93025;
+}
+
+.facturas-recibidas-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.facturas-recibidas-actions button {
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.btn-aprobar {
+  background-color: #1e8e3e;
+  color: #fff;
+}
+
+.btn-aprobar:hover {
+  background-color: #137333;
+}
+
+.btn-rechazar {
+  background-color: #d93025;
+  color: #fff;
+}
+
+.btn-rechazar:hover {
+  background-color: #b3261e;
+}
+
+.facturas-recibidas-empty {
+  text-align: center;
+  color: #5f6368;
+  padding: 3rem 1rem;
+}

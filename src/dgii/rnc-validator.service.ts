@@ -5,14 +5,15 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import type Redis from 'ioredis';
 
 import { REDIS_CLIENT } from '../common/guards/rate-limit.guard.js';
 import { getCorrelationId } from '../common/interceptors/correlation-id.interceptor.js';
 import type { Empresa } from '../database/entities/empresa.entity.js';
+import { RncContribuyente } from '../database/entities/rnc-contribuyente.entity.js';
 
-const DGII_RNC_TIMEOUT_MS = 5_000;
 const RNC_CACHE_TTL_SECONDS = 86_400; // 24 horas
 const RNC_CACHE_PREFIX = 'rnc_cache:';
 
@@ -50,17 +51,12 @@ export interface RncValidationSkipped {
 @Injectable()
 export class RncValidatorService {
   private readonly logger = new Logger(RncValidatorService.name);
-  private readonly dgiiRncUrl: string;
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
-    private readonly configService: ConfigService,
-  ) {
-    this.dgiiRncUrl = this.configService.get<string>(
-      'DGII_RNC_URL',
-      'https://dgii.gov.do/app/WebApps/ConsultasWeb2/ConsultasWeb/consultas/rnc.aspx',
-    );
-  }
+    @InjectRepository(RncContribuyente)
+    private readonly rncRepo: Repository<RncContribuyente>,
+  ) {}
 
   /**
    * Valida un RNC contra el servicio de la DGII.
@@ -175,77 +171,31 @@ export class RncValidatorService {
    */
   private async consultarDgii(
     rnc: string,
-    correlationId: string,
+    _correlationId: string,
   ): Promise<RncValidationResult> {
-    const url = `${this.dgiiRncUrl}?rnc=${encodeURIComponent(rnc)}`;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), DGII_RNC_TIMEOUT_MS);
-
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'X-Correlation-ID': correlationId,
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-    } catch (error: unknown) {
-      clearTimeout(timeoutId);
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      throw new DgiiUnreachableError(
-        `Error contactando servicio RNC DGII: ${message}`,
-      );
+    // Primero consultar la tabla local de contribuyentes (CSV DGII)
+    const local = await this.rncRepo.findOne({ where: { rnc } });
+    if (local) {
+      const estado = this.normalizeEstado(local.estado);
+      return {
+        rnc,
+        nombre_contribuyente: local.razon_social,
+        estado,
+        tipo_contribuyente: 'persona_juridica',
+        validado: true,
+      };
     }
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        // RNC no encontrado en DGII
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-            message: `RNC ${rnc} no existe en el registro de la DGII.`,
-            error: 'Unprocessable Entity',
-            detalles: { rnc, estado_dgii: 'no_encontrado' },
-          },
-          HttpStatus.UNPROCESSABLE_ENTITY,
-        );
-      }
-
-      // Error del servidor DGII -> tratar como inalcanzable
-      throw new DgiiUnreachableError(
-        `Servicio RNC DGII respondió con HTTP ${response.status}`,
-      );
-    }
-
-    const data = await response.json() as Record<string, unknown>;
-
-    return this.parseRncResponse(rnc, data);
-  }
-
-  /**
-   * Parsea la respuesta del servicio RNC de la DGII.
-   */
-  private parseRncResponse(
-    rnc: string,
-    data: Record<string, unknown>,
-  ): RncValidationResult {
-    const nombre = (data.nombre_contribuyente ?? data.nombre ?? data.razon_social ?? '') as string;
-    const estado = this.normalizeEstado(
-      (data.estado ?? data.status ?? 'inactivo') as string,
+    // Si no existe localmente, tratar como no encontrado
+    throw new HttpException(
+      {
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        message: `RNC ${rnc} no existe en el registro de contribuyentes.`,
+        error: 'Unprocessable Entity',
+        detalles: { rnc, estado_dgii: 'no_encontrado' },
+      },
+      HttpStatus.UNPROCESSABLE_ENTITY,
     );
-    const tipo = (data.tipo_contribuyente ?? data.tipo ?? 'persona_juridica') as string;
-
-    return {
-      rnc,
-      nombre_contribuyente: nombre,
-      estado,
-      tipo_contribuyente: tipo,
-      validado: true,
-    };
   }
 
   /**
@@ -306,7 +256,11 @@ export class RncValidatorService {
    * Determina si un error es por DGII inalcanzable (timeout o error de red).
    */
   private isDgiiUnreachableError(error: unknown): boolean {
-    return error instanceof DgiiUnreachableError;
+    return (
+      error instanceof DgiiUnreachableError ||
+      (error instanceof SyntaxError) ||
+      (error instanceof TypeError && /fetch|network|abort/i.test((error as Error).message))
+    );
   }
 }
 

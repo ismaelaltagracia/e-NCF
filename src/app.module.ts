@@ -17,6 +17,8 @@ import { PlanesModule } from './modules/planes/planes.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 import { DgiiModule } from './dgii/dgii.module.js';
 import { FacturasModule } from './modules/facturas/facturas.module.js';
+import { FacturasRecibidasModule } from './modules/facturas-recibidas/facturas-recibidas.module.js';
+import { CertificacionModule } from './modules/certificacion/certificacion.module.js';
 import { AuditoriaModule } from './modules/auditoria/auditoria.module.js';
 import { WebhooksModule } from './modules/webhooks/webhooks.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -41,6 +43,8 @@ import { HealthModule } from './health/health.module.js';
     AdminModule,
     DgiiModule,
     FacturasModule,
+    FacturasRecibidasModule,
+    CertificacionModule,
     AuditoriaModule,
     WebhooksModule,
     HealthModule,

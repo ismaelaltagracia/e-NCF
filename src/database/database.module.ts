@@ -13,6 +13,8 @@ import { SecuenciaNcf } from './entities/secuencia-ncf.entity.js';
 import { UsoMensual } from './entities/uso-mensual.entity.js';
 import { Auditoria } from './entities/auditoria.entity.js';
 import { Webhook } from './entities/webhook.entity.js';
+import { RncContribuyente } from './entities/rnc-contribuyente.entity.js';
+import { FacturaRecibida } from './entities/factura-recibida.entity.js';
 
 const entities = [
   Plan,
@@ -27,6 +29,8 @@ const entities = [
   UsoMensual,
   Auditoria,
   Webhook,
+  RncContribuyente,
+  FacturaRecibida,
 ];
 
 /**
