@@ -12,6 +12,7 @@ import FacturasRecibidas from './pages/FacturasRecibidas';
 import Certificacion from './pages/Certificacion';
 import Usuarios from './pages/Usuarios';
 import ApiKeys from './pages/ApiKeys';
+import Documentacion from './pages/Documentacion';
 import AdminEmpresas from './pages/admin/AdminEmpresas';
 import AdminPlanes from './pages/admin/AdminPlanes';
 import AdminAuditoria from './pages/admin/AdminAuditoria';
@@ -32,6 +33,7 @@ function App() {
         <Route index element={<Navigate to="/login" replace />} />
         <Route path="login" element={<Login />} />
         <Route path="planes" element={<Planes />} />
+        <Route path="documentacion" element={<Documentacion />} />
         <Route path="registro" element={<Onboarding />} />
         <Route
           path="facturas"

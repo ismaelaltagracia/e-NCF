@@ -99,6 +99,9 @@ function Layout() {
               <NavLink to="/planes" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Planes
               </NavLink>
+              <NavLink to="/documentacion" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                Documentación
+              </NavLink>
               <NavLink to="/login" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Iniciar Sesión
               </NavLink>
