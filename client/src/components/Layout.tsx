@@ -1,12 +1,59 @@
 import { useState, useEffect } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Layout.css';
+
+const navItems = [
+  { to: '/dashboard', label: 'Inicio', icon: '🏠' },
+  { to: '/facturas', label: 'Facturas', icon: '🧾' },
+  { to: '/facturas-recibidas', label: 'Recibidas', icon: '📥' },
+  { to: '/catalogo', label: 'Catálogo', icon: '📦' },
+  { to: '/secuencias-ncf', label: 'NCF', icon: '🔢' },
+  { to: '/certificacion', label: 'Certificación', icon: '🏅' },
+  { to: '/configuracion', label: 'Configuración', icon: '⚙️' },
+  { to: '/mi-plan', label: 'Mi Plan', icon: '📋' },
+  { to: '/usuarios', label: 'Usuarios', icon: '👥' },
+];
+
+const adminNavItems = [
+  { to: '/admin/empresas', label: 'Empresas', icon: '🏢' },
+  { to: '/admin/planes', label: 'Planes', icon: '💎' },
+  { to: '/admin/auditoria', label: 'Auditoría', icon: '📊' },
+];
+
+const publicNavItems = [
+  { to: '/planes', label: 'Planes', icon: '💎' },
+  { to: '/documentacion', label: 'Docs', icon: '📖' },
+  { to: '/login', label: 'Ingresar', icon: '🔑' },
+  { to: '/registro', label: 'Registro', icon: '✏️' },
+];
+
+const breadcrumbLabels: Record<string, string> = {
+  dashboard: 'Inicio',
+  facturas: 'Facturas',
+  nueva: 'Nueva Factura',
+  'facturas-recibidas': 'Facturas Recibidas',
+  catalogo: 'Catálogo',
+  'secuencias-ncf': 'Secuencias NCF',
+  certificacion: 'Certificación',
+  configuracion: 'Configuración',
+  'mi-plan': 'Mi Plan',
+  usuarios: 'Usuarios',
+  'api-keys': 'API Keys',
+  planes: 'Planes',
+  documentacion: 'Documentación',
+  admin: 'Admin',
+  empresas: 'Empresas',
+  auditoria: 'Auditoría',
+};
 
 function Layout() {
   const { isAuthenticated, userRole, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
   const [permiteApi, setPermiteApi] = useState(false);
+  const [userName, setUserName] = useState('');
   const [certAlert, setCertAlert] = useState<{ estado: string; dias_restantes: number | null; vence_en: string | null } | null>(null);
 
   const isSuperAdmin = userRole === 'super_admin';
@@ -14,7 +61,6 @@ function Layout() {
   useEffect(() => {
     if (isAuthenticated && !isSuperAdmin) {
       const token = localStorage.getItem('access_token');
-      // Fetch permisos
       fetch('/api/v1/empresas/me/permisos', {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -23,7 +69,7 @@ function Layout() {
           if (data) setPermiteApi(data.permite_api);
         })
         .catch(() => {});
-      // Fetch certificado estado
+
       fetch('/api/v1/empresas/me/certificado-estado', {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -37,103 +83,119 @@ function Layout() {
     }
   }, [isAuthenticated, isSuperAdmin]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          setUserName(payload.empresa_nombre || payload.email || 'Usuario');
+        } catch {
+          setUserName('Usuario');
+        }
+      }
+    }
+  }, [isAuthenticated]);
+
   const handleLogout = async () => {
     await logout();
     navigate('/login', { replace: true });
   };
 
+  const buildBreadcrumb = () => {
+    const segments = location.pathname.split('/').filter(Boolean);
+    return segments.map((seg) => breadcrumbLabels[seg] || seg);
+  };
+
+  const breadcrumbs = buildBreadcrumb();
+
+  if (location.pathname === '/login' || location.pathname === '/registro') {
+    return <Outlet />;
+  }
+
+  const currentNavItems = isSuperAdmin
+    ? adminNavItems
+    : isAuthenticated
+      ? [...navItems, ...(permiteApi ? [{ to: '/api-keys', label: 'API Keys', icon: '🔐' }] : [])]
+      : publicNavItems;
+
   return (
-    <div className="layout">
-      <header className="layout-header">
-        <h1 className="layout-title">e-NCF{isSuperAdmin ? ' · Admin' : ''}</h1>
-        <nav className="layout-nav" aria-label="Navegación principal">
-          {isAuthenticated && isSuperAdmin ? (
-            <>
-              <NavLink to="/admin/empresas" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Empresas
-              </NavLink>
-              <NavLink to="/admin/planes" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Planes
-              </NavLink>
-              <NavLink to="/admin/auditoria" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Auditoría
-              </NavLink>
-              <button className="nav-link logout-btn" onClick={handleLogout}>
-                Cerrar Sesión
-              </button>
-            </>
-          ) : isAuthenticated ? (
-            <>
-              <NavLink to="/facturas" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Facturas
-              </NavLink>
-              <NavLink to="/facturas-recibidas" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Recibidas
-              </NavLink>
-              <NavLink to="/catalogo" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Catálogo
-              </NavLink>
-              <NavLink to="/secuencias-ncf" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                NCF
-              </NavLink>
-              <NavLink to="/certificacion" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Certificación
-              </NavLink>
-              <NavLink to="/configuracion" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Configuración
-              </NavLink>
-              <NavLink to="/mi-plan" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Mi Plan
-              </NavLink>
-              <NavLink to="/usuarios" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Usuarios
-              </NavLink>
-              {permiteApi && (
-                <NavLink to="/api-keys" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                  API Keys
-                </NavLink>
-              )}
-              <button className="nav-link logout-btn" onClick={handleLogout}>
-                Cerrar Sesión
-              </button>
-            </>
-          ) : (
-            <>
-              <NavLink to="/planes" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Planes
-              </NavLink>
-              <NavLink to="/documentacion" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Documentación
-              </NavLink>
-              <NavLink to="/login" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Iniciar Sesión
-              </NavLink>
-              <NavLink to="/registro" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Registro
-              </NavLink>
-            </>
-          )}
-        </nav>
-      </header>
-      {certAlert && (
-        <div style={{
-          padding: '0.5rem 1.5rem',
-          fontSize: '0.85rem',
-          fontWeight: 500,
-          textAlign: 'center',
-          backgroundColor: certAlert.estado === 'vencido' ? '#fce8e6' : certAlert.estado === 'sin_certificado' ? '#fff3e0' : '#fef7e0',
-          color: certAlert.estado === 'vencido' ? '#d93025' : '#e37400',
-          borderBottom: '1px solid',
-          borderColor: certAlert.estado === 'vencido' ? '#f5c6cb' : '#fdd663',
-        }}>
-          {certAlert.estado === 'vencido' && '⛔ Su certificado digital ha vencido. No podrá firmar facturas hasta renovarlo.'}
-          {certAlert.estado === 'por_vencer' && `⚠️ Su certificado digital vence en ${certAlert.dias_restantes} día${certAlert.dias_restantes !== 1 ? 's' : ''} (${new Date(certAlert.vence_en!).toLocaleDateString('es-DO')}). Renuévelo pronto.`}
-          {certAlert.estado === 'sin_certificado' && '⚠️ No tiene certificado digital cargado. Cargue su certificado .p12 en Configuración para poder facturar.'}
+    <div className={`layout ${collapsed ? 'layout--collapsed' : ''}`}>
+      <aside className="sidebar" aria-label="Navegación principal">
+        <div className="sidebar-top">
+          <div className="sidebar-logo">
+            <span className="logo-text">e-<span className="logo-highlight">NCF</span></span>
+            {!collapsed && isSuperAdmin && <span className="logo-badge">Admin</span>}
+          </div>
+          <button
+            className="sidebar-toggle"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+          >
+            {collapsed ? '▶' : '◀'}
+          </button>
         </div>
-      )}
-      <main className="layout-content">
-        <Outlet />
-      </main>
+
+        <nav className="sidebar-nav">
+          {currentNavItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? 'sidebar-link--active' : ''}`
+              }
+              title={collapsed ? item.label : undefined}
+            >
+              <span className="sidebar-link-icon">{item.icon}</span>
+              {!collapsed && <span className="sidebar-link-label">{item.label}</span>}
+            </NavLink>
+          ))}
+        </nav>
+
+        {isAuthenticated && (
+          <div className="sidebar-bottom">
+            <div className="sidebar-user" title={userName}>
+              <span className="sidebar-user-avatar">👤</span>
+              {!collapsed && (
+                <span className="sidebar-user-name">{userName}</span>
+              )}
+            </div>
+            <button
+              className="sidebar-logout"
+              onClick={handleLogout}
+              title="Cerrar Sesión"
+            >
+              <span className="sidebar-link-icon">🚪</span>
+              {!collapsed && <span className="sidebar-link-label">Salir</span>}
+            </button>
+          </div>
+        )}
+      </aside>
+
+      <div className="layout-main">
+        {certAlert && (
+          <div className={`cert-alert cert-alert--${certAlert.estado}`}>
+            {certAlert.estado === 'vencido' && '⛔ Su certificado digital ha vencido. No podrá firmar facturas hasta renovarlo.'}
+            {certAlert.estado === 'por_vencer' && `⚠️ Su certificado digital vence en ${certAlert.dias_restantes} día${certAlert.dias_restantes !== 1 ? 's' : ''} (${new Date(certAlert.vence_en!).toLocaleDateString('es-DO')}). Renuévelo pronto.`}
+            {certAlert.estado === 'sin_certificado' && '⚠️ No tiene certificado digital cargado. Cargue su certificado .p12 en Configuración para poder facturar.'}
+          </div>
+        )}
+
+        <header className="layout-header">
+          <nav className="breadcrumb" aria-label="Breadcrumb">
+            {breadcrumbs.map((crumb, idx) => (
+              <span key={idx} className="breadcrumb-item">
+                {idx > 0 && <span className="breadcrumb-sep">/</span>}
+                {crumb}
+              </span>
+            ))}
+          </nav>
+        </header>
+
+        <main className="layout-content">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

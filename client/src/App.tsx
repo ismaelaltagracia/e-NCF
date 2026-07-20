@@ -14,6 +14,7 @@ import Usuarios from './pages/Usuarios';
 import ApiKeys from './pages/ApiKeys';
 import Documentacion from './pages/Documentacion';
 import MiPlan from './pages/MiPlan';
+import Dashboard from './pages/Dashboard';
 import AdminEmpresas from './pages/admin/AdminEmpresas';
 import AdminPlanes from './pages/admin/AdminPlanes';
 import AdminAuditoria from './pages/admin/AdminAuditoria';
@@ -28,14 +29,24 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to="/login" replace />} />
+        <Route index element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
         <Route path="login" element={<Login />} />
         <Route path="planes" element={<Planes />} />
         <Route path="documentacion" element={<Documentacion />} />
         <Route path="registro" element={<Onboarding />} />
+        <Route
+          path="dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="facturas"
           element={
@@ -141,7 +152,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
       </Route>
     </Routes>
   );

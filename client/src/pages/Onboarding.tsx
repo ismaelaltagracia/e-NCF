@@ -83,26 +83,64 @@ function Onboarding() {
   const [accessToken, setAccessToken] = useState<string>('');
 
   return (
-    <div className="onboarding">
-      <StepIndicator current={step} />
+    <div className="onboarding-page">
+      <div className="onboarding-branding">
+        <div className="onboarding-branding-content">
+          <div className="onboarding-logo">
+            e-<span>NCF</span>
+          </div>
+          <p className="onboarding-tagline">
+            Registre su empresa y comience a facturar electrónicamente en minutos.
+          </p>
+          <div className="onboarding-benefits">
+            <div className="benefit-item">
+              <span className="benefit-icon">⚡</span>
+              <div>
+                <strong>Rápido</strong>
+                <p>Registro en 3 pasos simples</p>
+              </div>
+            </div>
+            <div className="benefit-item">
+              <span className="benefit-icon">🔒</span>
+              <div>
+                <strong>Seguro</strong>
+                <p>Firma digital y cifrado de datos</p>
+              </div>
+            </div>
+            <div className="benefit-item">
+              <span className="benefit-icon">✅</span>
+              <div>
+                <strong>Certificado</strong>
+                <p>Cumple con normativa DGII</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {step === 'registro' && (
-        <RegistroStep
-          onSuccess={(token) => {
-            setAccessToken(token);
-            setStep('certificado');
-          }}
-        />
-      )}
+      <div className="onboarding-form-panel">
+        <div className="onboarding-card">
+          <StepIndicator current={step} />
 
-      {step === 'certificado' && (
-        <CertificadoStep
-          accessToken={accessToken}
-          onSuccess={() => setStep('confirmacion')}
-        />
-      )}
+          {step === 'registro' && (
+            <RegistroStep
+              onSuccess={(token) => {
+                setAccessToken(token);
+                setStep('certificado');
+              }}
+            />
+          )}
 
-      {step === 'confirmacion' && <ConfirmacionStep />}
+          {step === 'certificado' && (
+            <CertificadoStep
+              accessToken={accessToken}
+              onSuccess={() => setStep('confirmacion')}
+            />
+          )}
+
+          {step === 'confirmacion' && <ConfirmacionStep />}
+        </div>
+      </div>
     </div>
   );
 }
@@ -113,7 +151,7 @@ function StepIndicator({ current }: { current: Step }) {
   const steps: { key: Step; label: string }[] = [
     { key: 'registro', label: 'Registro' },
     { key: 'certificado', label: 'Certificado' },
-    { key: 'confirmacion', label: 'Confirmación' },
+    { key: 'confirmacion', label: 'Listo' },
   ];
 
   const currentIndex = steps.findIndex((s) => s.key === current);
@@ -128,7 +166,7 @@ function StepIndicator({ current }: { current: Step }) {
         return (
           <div key={s.key} className={className} aria-current={i === currentIndex ? 'step' : undefined}>
             <span className="step-number">{i + 1}</span>
-            <span>{s.label}</span>
+            <span className="step-label">{s.label}</span>
           </div>
         );
       })}
@@ -173,7 +211,6 @@ function RegistroStep({ onSuccess }: { onSuccess: (token: string) => void }) {
     setGeneralError('');
 
     try {
-      // Step 1: Register
       const registerRes = await fetch('/api/v1/onboarding/registro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -184,7 +221,6 @@ function RegistroStep({ onSuccess }: { onSuccess: (token: string) => void }) {
         const body = await registerRes.json();
 
         if (registerRes.status === 409) {
-          // Duplicate RNC or email
           const message: string = body.message || '';
           if (/rnc/i.test(message)) {
             setErrors({ rnc: 'RNC ya se encuentra registrado' });
@@ -212,7 +248,6 @@ function RegistroStep({ onSuccess }: { onSuccess: (token: string) => void }) {
         return;
       }
 
-      // Step 2: Auto-login to get access token
       const loginRes = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -247,103 +282,109 @@ function RegistroStep({ onSuccess }: { onSuccess: (token: string) => void }) {
           </div>
         )}
 
-        <div className="form-field">
-          <label htmlFor="empresa_nombre">Nombre de Empresa</label>
-          <input
-            id="empresa_nombre"
-            type="text"
-            maxLength={150}
-            value={values.empresa_nombre}
-            onChange={handleChange('empresa_nombre')}
-            aria-invalid={!!errors.empresa_nombre}
-            aria-describedby={errors.empresa_nombre ? 'err-empresa_nombre' : undefined}
-            autoComplete="organization"
-          />
-          <span id="err-empresa_nombre" className="field-error" role="alert">
-            {errors.empresa_nombre || ''}
-          </span>
+        <div className="form-row">
+          <div className="form-field">
+            <label htmlFor="empresa_nombre">Nombre de Empresa</label>
+            <input
+              id="empresa_nombre"
+              type="text"
+              maxLength={150}
+              value={values.empresa_nombre}
+              onChange={handleChange('empresa_nombre')}
+              aria-invalid={!!errors.empresa_nombre}
+              aria-describedby={errors.empresa_nombre ? 'err-empresa_nombre' : undefined}
+              autoComplete="organization"
+            />
+            <span id="err-empresa_nombre" className="field-error" role="alert">
+              {errors.empresa_nombre || ''}
+            </span>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="rnc">RNC</label>
+            <input
+              id="rnc"
+              type="text"
+              maxLength={11}
+              value={values.rnc}
+              onChange={handleChange('rnc')}
+              aria-invalid={!!errors.rnc}
+              aria-describedby={errors.rnc ? 'err-rnc' : undefined}
+              placeholder="9 u 11 caracteres"
+            />
+            <span id="err-rnc" className="field-error" role="alert">
+              {errors.rnc || ''}
+            </span>
+          </div>
         </div>
 
-        <div className="form-field">
-          <label htmlFor="rnc">RNC</label>
-          <input
-            id="rnc"
-            type="text"
-            maxLength={11}
-            value={values.rnc}
-            onChange={handleChange('rnc')}
-            aria-invalid={!!errors.rnc}
-            aria-describedby={errors.rnc ? 'err-rnc' : undefined}
-            placeholder="9 u 11 caracteres alfanuméricos"
-          />
-          <span id="err-rnc" className="field-error" role="alert">
-            {errors.rnc || ''}
-          </span>
+        <div className="form-row">
+          <div className="form-field">
+            <label htmlFor="admin_nombre">Nombre del Administrador</label>
+            <input
+              id="admin_nombre"
+              type="text"
+              maxLength={100}
+              value={values.admin_nombre}
+              onChange={handleChange('admin_nombre')}
+              aria-invalid={!!errors.admin_nombre}
+              aria-describedby={errors.admin_nombre ? 'err-admin_nombre' : undefined}
+              autoComplete="name"
+            />
+            <span id="err-admin_nombre" className="field-error" role="alert">
+              {errors.admin_nombre || ''}
+            </span>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="email">Correo Electrónico</label>
+            <input
+              id="email"
+              type="email"
+              value={values.email}
+              onChange={handleChange('email')}
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? 'err-email' : undefined}
+              autoComplete="email"
+            />
+            <span id="err-email" className="field-error" role="alert">
+              {errors.email || ''}
+            </span>
+          </div>
         </div>
 
-        <div className="form-field">
-          <label htmlFor="admin_nombre">Nombre del Administrador</label>
-          <input
-            id="admin_nombre"
-            type="text"
-            maxLength={100}
-            value={values.admin_nombre}
-            onChange={handleChange('admin_nombre')}
-            aria-invalid={!!errors.admin_nombre}
-            aria-describedby={errors.admin_nombre ? 'err-admin_nombre' : undefined}
-            autoComplete="name"
-          />
-          <span id="err-admin_nombre" className="field-error" role="alert">
-            {errors.admin_nombre || ''}
-          </span>
-        </div>
+        <div className="form-row">
+          <div className="form-field">
+            <label htmlFor="password">Contraseña</label>
+            <input
+              id="password"
+              type="password"
+              value={values.password}
+              onChange={handleChange('password')}
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? 'err-password' : undefined}
+              autoComplete="new-password"
+            />
+            <span id="err-password" className="field-error" role="alert">
+              {errors.password || ''}
+            </span>
+          </div>
 
-        <div className="form-field">
-          <label htmlFor="email">Correo Electrónico</label>
-          <input
-            id="email"
-            type="email"
-            value={values.email}
-            onChange={handleChange('email')}
-            aria-invalid={!!errors.email}
-            aria-describedby={errors.email ? 'err-email' : undefined}
-            autoComplete="email"
-          />
-          <span id="err-email" className="field-error" role="alert">
-            {errors.email || ''}
-          </span>
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="password">Contraseña</label>
-          <input
-            id="password"
-            type="password"
-            value={values.password}
-            onChange={handleChange('password')}
-            aria-invalid={!!errors.password}
-            aria-describedby={errors.password ? 'err-password' : undefined}
-            autoComplete="new-password"
-          />
-          <span id="err-password" className="field-error" role="alert">
-            {errors.password || ''}
-          </span>
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="confirm_password">Confirmar Contraseña</label>
-          <input
-            id="confirm_password"
-            type="password"
-            value={values.confirm_password}
-            onChange={handleChange('confirm_password')}
-            aria-invalid={!!errors.confirm_password}
-            aria-describedby={errors.confirm_password ? 'err-confirm_password' : undefined}
-            autoComplete="new-password"
-          />
-          <span id="err-confirm_password" className="field-error" role="alert">
-            {errors.confirm_password || ''}
-          </span>
+          <div className="form-field">
+            <label htmlFor="confirm_password">Confirmar Contraseña</label>
+            <input
+              id="confirm_password"
+              type="password"
+              value={values.confirm_password}
+              onChange={handleChange('confirm_password')}
+              aria-invalid={!!errors.confirm_password}
+              aria-describedby={errors.confirm_password ? 'err-confirm_password' : undefined}
+              autoComplete="new-password"
+            />
+            <span id="err-confirm_password" className="field-error" role="alert">
+              {errors.confirm_password || ''}
+            </span>
+          </div>
         </div>
 
         <div className="form-submit">
@@ -352,6 +393,10 @@ function RegistroStep({ onSuccess }: { onSuccess: (token: string) => void }) {
           </button>
         </div>
       </form>
+
+      <div className="onboarding-footer">
+        <p>¿Ya tienes cuenta? <Link to="/login">Iniciar Sesión</Link></p>
+      </div>
     </>
   );
 }
@@ -435,7 +480,6 @@ function CertificadoStep({
           setErrors({ general: message });
         }
 
-        // Allow re-upload
         setFile(null);
         return;
       }
@@ -528,8 +572,8 @@ function ConfirmacionStep() {
           Su empresa ha sido registrada y el certificado digital ha sido verificado correctamente.
           Ya puede comenzar a emitir comprobantes fiscales electrónicos.
         </p>
-        <Link to="/facturas" className="btn-secondary">
-          Ir a Facturas
+        <Link to="/dashboard" className="btn-secondary">
+          Ir al Inicio
         </Link>
       </div>
     </>
