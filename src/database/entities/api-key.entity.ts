@@ -40,6 +40,9 @@ export class ApiKey {
   @Column({ type: 'boolean', default: true })
   activo!: boolean;
 
+  @Column({ type: 'uuid', nullable: true })
+  created_by_user_id!: string | null;
+
   @Column({ type: 'timestamptz', nullable: true })
   last_used_at!: Date | null;
 

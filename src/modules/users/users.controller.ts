@@ -43,7 +43,7 @@ export class UsersController {
     @Body(new ZodValidationPipe(CreateUsuarioSchema)) dto: CreateUsuarioDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return this.usersService.create(dto, user.empresa_id);
+    return this.usersService.create(dto, user.empresa_id, user.usuario_id);
   }
 
   /**

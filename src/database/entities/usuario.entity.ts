@@ -41,6 +41,9 @@ export class Usuario {
   @Column({ type: 'boolean', default: true })
   activo!: boolean;
 
+  @Column({ type: 'uuid', nullable: true })
+  created_by_user_id!: string | null;
+
   @Column({ type: 'integer', default: 0 })
   intentos_fallidos!: number;
 

@@ -11,6 +11,8 @@ interface ApiKey {
   activo: boolean;
   last_used_at: string | null;
   created_at: string;
+  created_by_user_id: string | null;
+  created_by_nombre: string | null;
 }
 
 interface CreateFormData {
@@ -441,6 +443,14 @@ function ApiKeys() {
                             <span className="apikeys-detail-label">Creada</span>
                             <span className="apikeys-detail-value">{formatDate(apiKey.created_at)}</span>
                           </div>
+
+                          {/* Creado por */}
+                          {apiKey.created_by_nombre && (
+                            <div className="apikeys-detail-item">
+                              <span className="apikeys-detail-label">Creado por</span>
+                              <span className="apikeys-detail-value">{apiKey.created_by_nombre}</span>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>

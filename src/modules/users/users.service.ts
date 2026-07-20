@@ -22,6 +22,8 @@ export interface UsuarioResponse {
   email: string;
   rol: string;
   activo: boolean;
+  created_by_user_id: string | null;
+  created_at: Date;
 }
 
 @Injectable()
@@ -42,7 +44,7 @@ export class UsersService {
    * Crear un nuevo usuario asociado a la empresa del administrador.
    * Req 3.1, 3.7
    */
-  async create(dto: CreateUsuarioDto, empresaId: string): Promise<UsuarioResponse> {
+  async create(dto: CreateUsuarioDto, empresaId: string, createdByUserId?: string | null): Promise<UsuarioResponse> {
     // Verificar unicidad de email (Req 3.7)
     const existente = await this.usuarioRepo.findOne({
       where: { email: dto.email },
@@ -60,6 +62,7 @@ export class UsersService {
       password_hash: passwordHash,
       rol: dto.rol as RolUsuario,
       activo: true,
+      created_by_user_id: createdByUserId ?? null,
     });
 
     const saved = await this.usuarioRepo.save(usuario);
@@ -190,6 +193,8 @@ export class UsersService {
       email: usuario.email,
       rol: usuario.rol,
       activo: usuario.activo,
+      created_by_user_id: usuario.created_by_user_id ?? null,
+      created_at: usuario.created_at,
     };
   }
 }

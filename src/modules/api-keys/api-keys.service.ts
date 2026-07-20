@@ -34,6 +34,7 @@ export class ApiKeysService {
     empresaId: string,
     nombre: string,
     scopes: string[],
+    createdByUserId?: string | null,
   ): Promise<{ key: string; id: string }> {
     const rawKey = crypto.randomBytes(32).toString('base64');
     const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
@@ -46,6 +47,7 @@ export class ApiKeysService {
       key_encrypted: keyEncrypted,
       scopes,
       activo: true,
+      created_by_user_id: createdByUserId ?? null,
     });
 
     const saved = await this.apiKeyRepo.save(apiKey);
@@ -63,6 +65,23 @@ export class ApiKeysService {
       order: { created_at: 'ASC' },
     });
 
+    // Resolve creator names
+    const creatorIds = keys
+      .map((k) => k.created_by_user_id)
+      .filter((id): id is string => !!id);
+
+    let creatorNames: Record<string, string> = {};
+    if (creatorIds.length > 0) {
+      const usuarios = await this.apiKeyRepo.manager.query(
+        `SELECT id, nombre FROM usuarios WHERE id = ANY($1)`,
+        [creatorIds],
+      );
+      creatorNames = (usuarios as Array<{ id: string; nombre: string }>).reduce(
+        (acc, u) => ({ ...acc, [u.id]: u.nombre }),
+        {} as Record<string, string>,
+      );
+    }
+
     return keys.map((k) => ({
       id: k.id,
       nombre: k.nombre,
@@ -70,6 +89,8 @@ export class ApiKeysService {
       activo: k.activo,
       created_at: k.created_at,
       last_used_at: k.last_used_at,
+      created_by_user_id: k.created_by_user_id,
+      created_by_nombre: k.created_by_user_id ? (creatorNames[k.created_by_user_id] || null) : null,
     }));
   }
 

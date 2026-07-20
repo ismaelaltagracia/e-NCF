@@ -38,7 +38,7 @@ export class ApiKeysController {
     @Body(new ZodValidationPipe(CreateApiKeySchema)) dto: CreateApiKeyDto,
     @CurrentUser() user: RequestContext,
   ) {
-    const result = await this.apiKeysService.create(user.empresa_id, dto.nombre, dto.scopes);
+    const result = await this.apiKeysService.create(user.empresa_id, dto.nombre, dto.scopes, user.usuario_id);
     return {
       id: result.id,
       key: result.key,
