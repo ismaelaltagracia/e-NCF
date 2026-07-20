@@ -1,7 +1,8 @@
 import { Injectable, ForbiddenException, NotFoundException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { randomBytes, createHash } from 'crypto';
+import * as crypto from 'node:crypto';
 
 import { ApiKey } from '../../database/entities/api-key.entity.js';
 
@@ -21,11 +22,12 @@ export class ApiKeysService {
   constructor(
     @InjectRepository(ApiKey)
     private readonly apiKeyRepo: Repository<ApiKey>,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
    * Crear un nuevo API Key para la empresa.
-   * Genera 256 bits random, almacena hash SHA-256.
+   * Genera 256 bits random, almacena hash SHA-256 y key encriptada.
    * Req 4.1
    */
   async create(
@@ -33,13 +35,15 @@ export class ApiKeysService {
     nombre: string,
     scopes: string[],
   ): Promise<{ key: string; id: string }> {
-    const rawKey = randomBytes(32).toString('base64');
-    const keyHash = createHash('sha256').update(rawKey).digest('hex');
+    const rawKey = crypto.randomBytes(32).toString('base64');
+    const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
+    const keyEncrypted = this.encryptKey(rawKey);
 
     const apiKey = this.apiKeyRepo.create({
       empresa_id: empresaId,
       nombre,
       key_hash: keyHash,
+      key_encrypted: keyEncrypted,
       scopes,
       activo: true,
     });
@@ -98,13 +102,15 @@ export class ApiKeysService {
     await this.apiKeyRepo.save(existing);
 
     // Generar nuevo con mismos scopes y nombre
-    const rawKey = randomBytes(32).toString('base64');
-    const keyHash = createHash('sha256').update(rawKey).digest('hex');
+    const rawKey = crypto.randomBytes(32).toString('base64');
+    const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
+    const keyEncrypted = this.encryptKey(rawKey);
 
     const newApiKey = this.apiKeyRepo.create({
       empresa_id: empresaId,
       nombre: existing.nombre,
       key_hash: keyHash,
+      key_encrypted: keyEncrypted,
       scopes: existing.scopes,
       activo: true,
     });
@@ -136,5 +142,56 @@ export class ApiKeysService {
 
     existing.activo = false;
     await this.apiKeyRepo.save(existing);
+  }
+
+  /**
+   * Revelar (descifrar) la key de un API Key.
+   */
+  async revealKey(apiKeyId: string, empresaId: string): Promise<{ key: string }> {
+    const existing = await this.apiKeyRepo.findOne({
+      where: { id: apiKeyId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('API Key no encontrada');
+    }
+
+    if (existing.empresa_id !== empresaId) {
+      throw new ForbiddenException('No tiene permisos para gestionar API keys de otra empresa');
+    }
+
+    if (!existing.key_encrypted) {
+      throw new NotFoundException('La key encriptada no está disponible para esta API Key');
+    }
+
+    const plainKey = this.decryptKey(existing.key_encrypted);
+    return { key: plainKey };
+  }
+
+  /* ---------- Encryption Helpers ---------- */
+
+  private getEncryptionKey(): Buffer {
+    const hex = this.configService.get<string>('ENCRYPTION_KEY') || '';
+    return Buffer.from(hex, 'hex');
+  }
+
+  private encryptKey(plainKey: string): Buffer {
+    const encryptionKey = this.getEncryptionKey();
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', encryptionKey, iv);
+    const encrypted = Buffer.concat([cipher.update(Buffer.from(plainKey, 'utf-8')), cipher.final()]);
+    const authTag = cipher.getAuthTag();
+    return Buffer.concat([iv, authTag, encrypted]);
+  }
+
+  private decryptKey(keyEncrypted: Buffer): string {
+    const encryptionKey = this.getEncryptionKey();
+    const iv = keyEncrypted.subarray(0, 12);
+    const authTag = keyEncrypted.subarray(12, 28);
+    const ciphertext = keyEncrypted.subarray(28);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', encryptionKey, iv);
+    decipher.setAuthTag(authTag);
+    const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+    return decrypted.toString('utf-8');
   }
 }

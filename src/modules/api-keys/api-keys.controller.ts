@@ -92,4 +92,18 @@ export class ApiKeysController {
     await this.apiKeysService.revoke(id, user.empresa_id, correlationId);
     return { mensaje: 'API Key revocada exitosamente' };
   }
+
+  /**
+   * GET /api/v1/api-keys/:id/reveal
+   * Revelar la key descifrada (solo admin). Req 4.5
+   */
+  @Get(':id/reveal')
+  @Roles('admin')
+  @HttpCode(HttpStatus.OK)
+  async revealKey(
+    @Param('id') id: string,
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.apiKeysService.revealKey(id, user.empresa_id);
+  }
 }

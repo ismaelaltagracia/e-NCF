@@ -10,6 +10,8 @@ import Catalogo from './pages/Catalogo';
 import SecuenciasNcf from './pages/SecuenciasNcf';
 import FacturasRecibidas from './pages/FacturasRecibidas';
 import Certificacion from './pages/Certificacion';
+import Usuarios from './pages/Usuarios';
+import ApiKeys from './pages/ApiKeys';
 import { useAuth } from './context/AuthContext';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -81,6 +83,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Certificacion />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="usuarios"
+          element={
+            <ProtectedRoute>
+              <Usuarios />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="api-keys"
+          element={
+            <ProtectedRoute>
+              <ApiKeys />
             </ProtectedRoute>
           }
         />

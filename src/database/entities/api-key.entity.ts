@@ -34,6 +34,9 @@ export class ApiKey {
   @Column({ type: 'jsonb', default: [] })
   scopes!: string[];
 
+  @Column({ type: 'bytea', nullable: true })
+  key_encrypted!: Buffer | null;
+
   @Column({ type: 'boolean', default: true })
   activo!: boolean;
 

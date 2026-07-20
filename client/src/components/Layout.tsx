@@ -36,6 +36,12 @@ function Layout() {
               <NavLink to="/configuracion" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Configuración
               </NavLink>
+              <NavLink to="/usuarios" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                Usuarios
+              </NavLink>
+              <NavLink to="/api-keys" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                API Keys
+              </NavLink>
               <button className="nav-link logout-btn" onClick={handleLogout}>
                 Cerrar Sesión
               </button>
