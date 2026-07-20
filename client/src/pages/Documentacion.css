@@ -311,3 +311,359 @@
     padding: 0.5rem 0.6rem;
   }
 }
+
+/* ========================================
+   Download Section
+   ======================================== */
+.doc-download-section {
+  background: linear-gradient(135deg, #f3e5f5, #e8eaf6);
+  border: 1px solid #ce93d8;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.doc-download-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+}
+
+.doc-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.doc-download-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.doc-download-btn.postman {
+  background: #ff6c37;
+  color: white;
+}
+
+.doc-download-btn.swagger {
+  background: #49cc90;
+  color: white;
+}
+
+.doc-download-hint {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+}
+
+/* ========================================
+   API Playground
+   ======================================== */
+.doc-playground {
+  background: #f0f4f8;
+  border: 2px solid #90caf9;
+  border-radius: 14px;
+  padding: 2rem;
+  margin-top: 3rem;
+  margin-bottom: 2rem;
+}
+
+.doc-playground h2 {
+  font-size: 1.5rem;
+  color: #1a73e8;
+  margin-bottom: 0.4rem;
+}
+
+.doc-playground-subtitle {
+  color: #555;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+/* API Key input */
+.doc-playground-apikey {
+  margin-bottom: 1.5rem;
+}
+
+.doc-playground-apikey label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: #333;
+}
+
+.doc-playground-apikey input {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: monospace;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.doc-playground-apikey input:focus {
+  outline: none;
+  border-color: #1a73e8;
+}
+
+/* Tabs */
+.doc-playground-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.doc-playground-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.doc-playground-tab:hover {
+  border-color: #1a73e8;
+}
+
+.doc-playground-tab.active {
+  background: #1a73e8;
+  color: white;
+  border-color: #1a73e8;
+}
+
+.doc-playground-tab.active .tab-method {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+.tab-method {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.tab-method.post {
+  background: #c8e6c9;
+  color: #2e7d32;
+}
+
+.tab-method.get {
+  background: #bbdefb;
+  color: #1565c0;
+}
+
+/* Panel */
+.doc-playground-panel {
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+}
+
+.doc-playground-request-info {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid #eee;
+}
+
+/* Params */
+.doc-playground-params {
+  margin-bottom: 1rem;
+}
+
+.doc-playground-param {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.doc-playground-param label {
+  font-weight: 600;
+  font-family: monospace;
+  font-size: 0.9rem;
+  min-width: 50px;
+  color: #1a73e8;
+}
+
+.doc-playground-param input {
+  flex: 1;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: monospace;
+}
+
+.doc-playground-param input:focus {
+  outline: none;
+  border-color: #1a73e8;
+}
+
+/* Editor */
+.doc-playground-editor {
+  margin-bottom: 1rem;
+}
+
+.doc-playground-editor label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+  color: #555;
+}
+
+.doc-playground-editor textarea {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+  background: #fafafa;
+}
+
+.doc-playground-editor textarea:focus {
+  outline: none;
+  border-color: #1a73e8;
+  background: white;
+}
+
+/* Send button */
+.doc-playground-send {
+  background: #1a73e8;
+  color: white;
+  border: none;
+  padding: 0.7rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.doc-playground-send:hover:not(:disabled) {
+  background: #1557b0;
+  transform: translateY(-1px);
+}
+
+.doc-playground-send:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+
+.doc-playground-warning {
+  color: #e65100;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+/* Response */
+.doc-playground-response {
+  margin-top: 1.5rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #333;
+}
+
+.doc-playground-response-header {
+  background: #2d2d2d;
+  padding: 0.6rem 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.status-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.2rem 0.7rem;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.status-badge.success {
+  background: #4caf50;
+  color: white;
+}
+
+.status-badge.error {
+  background: #f44336;
+  color: white;
+}
+
+.doc-playground-response-body {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  padding: 1.2rem 1.5rem;
+  margin: 0;
+  font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Responsive playground */
+@media (max-width: 768px) {
+  .doc-playground {
+    padding: 1rem;
+  }
+
+  .doc-playground-tabs {
+    flex-direction: column;
+  }
+
+  .doc-playground-tab {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .doc-playground-panel {
+    padding: 1rem;
+  }
+
+  .doc-download-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .doc-playground-param {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .doc-playground-param input {
+    width: 100%;
+  }
+}

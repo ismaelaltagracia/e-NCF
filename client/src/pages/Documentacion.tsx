@@ -1,6 +1,209 @@
+import { useState } from 'react';
 import './Documentacion.css';
 
+const ENDPOINTS = [
+  {
+    method: 'POST',
+    path: '/api/v1/facturas',
+    name: 'Crear Factura',
+    params: [],
+    body: JSON.stringify(
+      {
+        tipo_comprobante: 'E31',
+        comprador: {
+          rnc: '130000001',
+          razon_social: 'Empresa Cliente SRL',
+          direccion: 'Av. Principal #100, Santo Domingo',
+        },
+        items: [
+          {
+            descripcion: 'Servicio de consultoría',
+            cantidad: 1,
+            precio_unitario: 5000.0,
+            itbis: 18,
+          },
+        ],
+      },
+      null,
+      2,
+    ),
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/facturas/:id/estado',
+    name: 'Consultar Estado',
+    params: [{ key: 'id', placeholder: 'ID de la factura (UUID)' }],
+    body: null,
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/facturas/:id/pdf',
+    name: 'Descargar PDF',
+    params: [{ key: 'id', placeholder: 'ID de la factura (UUID)' }],
+    body: null,
+  },
+  {
+    method: 'POST',
+    path: '/api/v1/facturas/:id/anular',
+    name: 'Anular Factura',
+    params: [{ key: 'id', placeholder: 'ID de la factura (UUID)' }],
+    body: JSON.stringify({ motivo: 'Error en datos del comprador' }, null, 2),
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/rnc/:rnc/validar',
+    name: 'Validar RNC',
+    params: [{ key: 'rnc', placeholder: 'RNC a validar (ej: 130000001)' }],
+    body: null,
+  },
+];
+
+function generatePostmanCollection(): string {
+  const collection = {
+    info: {
+      name: 'e-NCF API',
+      description: 'Colección de la API de facturación electrónica e-NCF',
+      schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
+    },
+    auth: {
+      type: 'apikey',
+      apikey: [
+        { key: 'key', value: 'X-API-Key', type: 'string' },
+        { key: 'value', value: '{{api_key}}', type: 'string' },
+        { key: 'in', value: 'header', type: 'string' },
+      ],
+    },
+    variable: [
+      { key: 'base_url', value: window.location.origin },
+      { key: 'api_key', value: 'su-api-key-aqui' },
+      { key: 'factura_id', value: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' },
+    ],
+    item: [
+      {
+        name: 'Crear Factura (E31)',
+        request: {
+          method: 'POST',
+          url: '{{base_url}}/api/v1/facturas',
+          header: [{ key: 'Content-Type', value: 'application/json' }],
+          body: {
+            mode: 'raw',
+            raw: JSON.stringify(
+              {
+                tipo_comprobante: 'E31',
+                comprador: { rnc: '130000001', razon_social: 'Empresa Cliente SRL', direccion: 'Av. Principal #100, Santo Domingo' },
+                items: [{ descripcion: 'Servicio de consultoría', cantidad: 1, precio_unitario: 5000.0, itbis: 18 }],
+              },
+              null,
+              2,
+            ),
+          },
+        },
+      },
+      {
+        name: 'Consultar Estado',
+        request: { method: 'GET', url: '{{base_url}}/api/v1/facturas/{{factura_id}}/estado' },
+      },
+      {
+        name: 'Descargar PDF',
+        request: { method: 'GET', url: '{{base_url}}/api/v1/facturas/{{factura_id}}/pdf' },
+      },
+      {
+        name: 'Anular Factura',
+        request: {
+          method: 'POST',
+          url: '{{base_url}}/api/v1/facturas/{{factura_id}}/anular',
+          header: [{ key: 'Content-Type', value: 'application/json' }],
+          body: { mode: 'raw', raw: JSON.stringify({ motivo: 'Error en datos del comprador' }, null, 2) },
+        },
+      },
+      {
+        name: 'Validar RNC',
+        request: { method: 'GET', url: '{{base_url}}/api/v1/rnc/130000001/validar' },
+      },
+    ],
+  };
+  return JSON.stringify(collection, null, 2);
+}
+
+function downloadPostmanCollection() {
+  const json = generatePostmanCollection();
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'e-NCF-API.postman_collection.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function Documentacion() {
+  const [apiKey, setApiKey] = useState('');
+  const [activeEndpoint, setActiveEndpoint] = useState(0);
+  const [requestBody, setRequestBody] = useState(ENDPOINTS[0].body || '');
+  const [paramValues, setParamValues] = useState<Record<string, string>>({});
+  const [response, setResponse] = useState<{ status: number; body: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleEndpointChange = (idx: number) => {
+    setActiveEndpoint(idx);
+    setRequestBody(ENDPOINTS[idx].body || '');
+    setParamValues({});
+    setResponse(null);
+  };
+
+  const handleSend = async () => {
+    const endpoint = ENDPOINTS[activeEndpoint];
+    let url = endpoint.path;
+
+    // Replace path params
+    for (const param of endpoint.params) {
+      const value = paramValues[param.key] || '';
+      if (!value) {
+        setResponse({ status: 0, body: `Error: El parámetro "${param.key}" es requerido.` });
+        return;
+      }
+      url = url.replace(`:${param.key}`, encodeURIComponent(value));
+    }
+
+    setLoading(true);
+    setResponse(null);
+
+    try {
+      const options: RequestInit = {
+        method: endpoint.method,
+        headers: {
+          'X-API-Key': apiKey,
+          ...(endpoint.body ? { 'Content-Type': 'application/json' } : {}),
+        },
+      };
+      if (endpoint.method === 'POST' && requestBody) {
+        options.body = requestBody;
+      }
+
+      const res = await fetch(url, options);
+      const contentType = res.headers.get('content-type') || '';
+
+      let body: string;
+      if (contentType.includes('application/json')) {
+        const json = await res.json();
+        body = JSON.stringify(json, null, 2);
+      } else if (contentType.includes('application/pdf')) {
+        body = '[Archivo PDF recibido — descarga iniciada]';
+      } else {
+        body = await res.text();
+      }
+
+      setResponse({ status: res.status, body });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error desconocido';
+      setResponse({ status: 0, body: `Error de red: ${message}` });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="doc-page">
       {/* Header */}
@@ -13,6 +216,26 @@ function Documentacion() {
           <strong>NO tienen validez fiscal ante la DGII</strong>. Solo se cobra a partir de que pase a producción.
         </div>
       </header>
+
+      {/* Download / Swagger Section */}
+      <section className="doc-download-section">
+        <div className="doc-download-buttons">
+          <button className="doc-download-btn postman" onClick={downloadPostmanCollection}>
+            📥 Descargar Colección Postman
+          </button>
+          <a
+            className="doc-download-btn swagger"
+            href="/api/docs"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            📖 Ver documentación Swagger
+          </a>
+        </div>
+        <p className="doc-download-hint">
+          Importe la colección en Postman para probar todos los endpoints con ejemplos precargados.
+        </p>
+      </section>
 
       {/* Section 1: Flujo General */}
       <section className="doc-section">
@@ -369,6 +592,101 @@ X-API-Key: sk_live_abc123...
         <div className="doc-note">
           <strong>Tip:</strong> Todos los errores retornan un JSON con la estructura:{' '}
           <code>{`{ "statusCode": 400, "message": "detalle", "error": "Bad Request" }`}</code>
+        </div>
+      </section>
+
+      {/* Section 10: API Playground */}
+      <section className="doc-playground">
+        <h2>🧪 Playground — Pruebe la API</h2>
+        <p className="doc-playground-subtitle">
+          Envíe solicitudes reales a la API directamente desde esta página.
+        </p>
+
+        <div className="doc-playground-apikey">
+          <label htmlFor="playground-apikey">🔑 API Key</label>
+          <input
+            id="playground-apikey"
+            type="password"
+            placeholder="Ingrese su X-API-Key aquí..."
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+          />
+        </div>
+
+        <div className="doc-playground-tabs">
+          {ENDPOINTS.map((ep, idx) => (
+            <button
+              key={idx}
+              className={`doc-playground-tab ${activeEndpoint === idx ? 'active' : ''}`}
+              onClick={() => handleEndpointChange(idx)}
+            >
+              <span className={`tab-method ${ep.method.toLowerCase()}`}>{ep.method}</span>
+              {ep.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="doc-playground-panel">
+          <div className="doc-playground-request-info">
+            <span className={`doc-endpoint-method ${ENDPOINTS[activeEndpoint].method.toLowerCase()}`}>
+              {ENDPOINTS[activeEndpoint].method}
+            </span>
+            <span className="doc-endpoint-path">{ENDPOINTS[activeEndpoint].path}</span>
+          </div>
+
+          {ENDPOINTS[activeEndpoint].params.length > 0 && (
+            <div className="doc-playground-params">
+              {ENDPOINTS[activeEndpoint].params.map((param) => (
+                <div key={param.key} className="doc-playground-param">
+                  <label htmlFor={`param-${param.key}`}>:{param.key}</label>
+                  <input
+                    id={`param-${param.key}`}
+                    type="text"
+                    placeholder={param.placeholder}
+                    value={paramValues[param.key] || ''}
+                    onChange={(e) => setParamValues({ ...paramValues, [param.key]: e.target.value })}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {ENDPOINTS[activeEndpoint].body !== null && (
+            <div className="doc-playground-editor">
+              <label>Body (JSON)</label>
+              <textarea
+                rows={12}
+                value={requestBody}
+                onChange={(e) => setRequestBody(e.target.value)}
+                spellCheck={false}
+              />
+            </div>
+          )}
+
+          <button
+            className="doc-playground-send"
+            onClick={handleSend}
+            disabled={loading || !apiKey}
+          >
+            {loading ? '⏳ Enviando...' : '▶ Enviar'}
+          </button>
+
+          {!apiKey && (
+            <p className="doc-playground-warning">
+              Ingrese su API Key para enviar solicitudes.
+            </p>
+          )}
+
+          {response && (
+            <div className="doc-playground-response">
+              <div className="doc-playground-response-header">
+                <span className={`status-badge ${response.status >= 200 && response.status < 300 ? 'success' : response.status === 0 ? 'error' : 'error'}`}>
+                  {response.status === 0 ? 'ERROR' : `HTTP ${response.status}`}
+                </span>
+              </div>
+              <pre className="doc-playground-response-body">{response.body}</pre>
+            </div>
+          )}
         </div>
       </section>
     </div>
