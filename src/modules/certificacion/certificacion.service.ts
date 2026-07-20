@@ -225,48 +225,56 @@ export class CertificacionService {
   async getProgresoIntegrador(empresaId: string): Promise<ProgresoIntegradorResponse> {
     const pasos: PasoIntegrador[] = [];
 
+    // Solo contar facturas creadas vía API Key (no desde la SPA)
+    const apiOnlyCondition = 'f.api_key_id IS NOT NULL';
+
     // Step 1: E31 factura básica (at least 1 E31 with 1 item)
     const paso1 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere("f.payload_json->>'tipo_comprobante' = :tipo", { tipo: 'E31' })
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(1, 'E31 Factura básica', paso1, 'Envíe una factura E31 (Crédito Fiscal) con al menos 1 ítem'));
+    pasos.push(this.buildPasoIntegrador(1, 'E31 Factura básica', paso1, 'Envíe una factura E31 (Crédito Fiscal) usando su API Key'));
 
     // Step 2: E31 with 3+ items
     const paso2 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere("f.payload_json->>'tipo_comprobante' = :tipo", { tipo: 'E31' })
       .andWhere("jsonb_array_length(f.payload_json->'items') >= 3")
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(2, 'E31 múltiples ítems', paso2, 'Envíe una factura E31 con 3 o más ítems'));
+    pasos.push(this.buildPasoIntegrador(2, 'E31 múltiples ítems', paso2, 'Envíe una factura E31 con 3+ ítems usando su API Key'));
 
     // Step 3: E31 with descuento_global > 0
     const paso3 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere("f.payload_json->>'tipo_comprobante' = :tipo", { tipo: 'E31' })
       .andWhere("(f.payload_json->>'descuento_global')::numeric > 0")
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(3, 'E31 con descuento global', paso3, 'Envíe una factura E31 con descuento_global mayor a 0'));
+    pasos.push(this.buildPasoIntegrador(3, 'E31 con descuento global', paso3, 'Envíe una factura E31 con descuento_global usando su API Key'));
 
     // Step 4: E32 factura
     const paso4 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere("f.payload_json->>'tipo_comprobante' = :tipo", { tipo: 'E32' })
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(4, 'E32 Factura de Consumo', paso4, 'Envíe una factura E32 (Factura de Consumo)'));
+    pasos.push(this.buildPasoIntegrador(4, 'E32 Factura de Consumo', paso4, 'Envíe una factura E32 usando su API Key'));
 
     // Step 5: E32 with items that have tasa_itbis > 0
     const paso5 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere("f.payload_json->>'tipo_comprobante' = :tipo", { tipo: 'E32' })
       .andWhere(`EXISTS (
         SELECT 1 FROM jsonb_array_elements(f.payload_json->'items') item
@@ -274,83 +282,91 @@ export class CertificacionService {
       )`)
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(5, 'E32 con ITBIS', paso5, 'Envíe una factura E32 donde al menos un ítem tenga tasa_itbis > 0'));
+    pasos.push(this.buildPasoIntegrador(5, 'E32 con ITBIS', paso5, 'Envíe una factura E32 con ITBIS usando su API Key'));
 
     // Step 6: E33 Nota Débito with informacion_referencia
     const paso6 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere("f.payload_json->>'tipo_comprobante' = :tipo", { tipo: 'E33' })
       .andWhere("f.payload_json->'informacion_referencia' IS NOT NULL")
       .andWhere("f.payload_json->>'informacion_referencia' != 'null'")
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(6, 'E33 Nota de Débito', paso6, 'Envíe una Nota de Débito (E33) con informacion_referencia'));
+    pasos.push(this.buildPasoIntegrador(6, 'E33 Nota de Débito', paso6, 'Envíe una Nota de Débito (E33) con referencia usando su API Key'));
 
     // Step 7: E34 Nota Crédito with informacion_referencia
     const paso7 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere("f.payload_json->>'tipo_comprobante' = :tipo", { tipo: 'E34' })
       .andWhere("f.payload_json->'informacion_referencia' IS NOT NULL")
       .andWhere("f.payload_json->>'informacion_referencia' != 'null'")
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(7, 'E34 Nota de Crédito', paso7, 'Envíe una Nota de Crédito (E34) con informacion_referencia'));
+    pasos.push(this.buildPasoIntegrador(7, 'E34 Nota de Crédito', paso7, 'Envíe una Nota de Crédito (E34) con referencia usando su API Key'));
 
     // Step 8: E41 factura
     const paso8 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere("f.payload_json->>'tipo_comprobante' = :tipo", { tipo: 'E41' })
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(8, 'E41 Comprobante de Compras', paso8, 'Envíe un Comprobante de Compras (E41)'));
+    pasos.push(this.buildPasoIntegrador(8, 'E41 Comprobante de Compras', paso8, 'Envíe un Comprobante de Compras (E41) usando su API Key'));
 
     // Step 9: E43 factura
     const paso9 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere("f.payload_json->>'tipo_comprobante' = :tipo", { tipo: 'E43' })
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(9, 'E43 Gastos Menores', paso9, 'Envíe un comprobante de Gastos Menores (E43)'));
+    pasos.push(this.buildPasoIntegrador(9, 'E43 Gastos Menores', paso9, 'Envíe un comprobante de Gastos Menores (E43) usando su API Key'));
 
     // Step 10: E44 factura
     const paso10 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere("f.payload_json->>'tipo_comprobante' = :tipo", { tipo: 'E44' })
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(10, 'E44 Regímenes Especiales', paso10, 'Envíe un comprobante de Regímenes Especiales (E44)'));
+    pasos.push(this.buildPasoIntegrador(10, 'E44 Regímenes Especiales', paso10, 'Envíe un comprobante de Regímenes Especiales (E44) usando su API Key'));
 
     // Step 11: E45 factura
     const paso11 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere("f.payload_json->>'tipo_comprobante' = :tipo", { tipo: 'E45' })
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(11, 'E45 Gubernamental', paso11, 'Envíe un comprobante Gubernamental (E45)'));
+    pasos.push(this.buildPasoIntegrador(11, 'E45 Gubernamental', paso11, 'Envíe un comprobante Gubernamental (E45) usando su API Key'));
 
-    // Step 12: Factura with estado_dgii = 'anulado'
+    // Step 12: Factura with estado_dgii = 'anulado' (created via API)
     const paso12 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere('f.estado_dgii = :estado', { estado: 'anulado' })
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(12, 'Anulación de e-CF', paso12, 'Anule al menos una factura (estado_dgii = anulado)'));
+    pasos.push(this.buildPasoIntegrador(12, 'Anulación de e-CF', paso12, 'Anule una factura creada vía API Key'));
 
-    // Step 13: Factura with track_id (estado was consulted)
+    // Step 13: Factura with track_id (created via API)
     const paso13 = await this.facturaRepo
       .createQueryBuilder('f')
       .where('f.empresa_id = :empresaId', { empresaId })
+      .andWhere(apiOnlyCondition)
       .andWhere('f.track_id IS NOT NULL')
       .orderBy('f.created_at', 'ASC')
       .getOne();
-    pasos.push(this.buildPasoIntegrador(13, 'Consulta Estado (Track ID)', paso13, 'Consulte el estado de al menos una factura (debe tener track_id)'));
+    pasos.push(this.buildPasoIntegrador(13, 'Consulta Estado (Track ID)', paso13, 'Consulte el estado de una factura creada vía API Key'));
 
     // Step 14: Factura recibida with estado_aprobacion = 'aprobada' or 'rechazada'
     const paso14 = await this.facturaRecibidaRepo
