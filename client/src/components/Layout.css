@@ -192,6 +192,33 @@
   color: #f87171;
 }
 
+/* DGII status indicator */
+.sidebar-dgii-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  animation: dgiiPulse 2s ease-in-out infinite;
+}
+
+.sidebar-dgii-status--contingencia {
+  background: rgba(234, 179, 8, 0.15);
+  color: #fbbf24;
+}
+
+.sidebar-dgii-status--verificando {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+
+@keyframes dgiiPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 .layout--collapsed .sidebar-logout {
   justify-content: center;
 }

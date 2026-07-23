@@ -1,0 +1,281 @@
+.batch {
+  animation: batchFadeIn 0.4s ease-out;
+}
+
+@keyframes batchFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.batch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.batch-header h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.batch-header p {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.batch-btn-plantilla {
+  padding: 0.5rem 1rem;
+  border: 1px solid #1a3a5c;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1a3a5c;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.batch-btn-plantilla:hover {
+  background: #f0f5ff;
+}
+
+/* Upload area */
+.batch-upload {
+  margin-bottom: 1.5rem;
+}
+
+.batch-upload-area {
+  border: 2px dashed #d1d9e6;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  transition: border-color 0.2s;
+  margin-bottom: 1rem;
+}
+
+.batch-upload-area:hover {
+  border-color: #1a3a5c;
+}
+
+.batch-upload-area input[type="file"] {
+  display: none;
+}
+
+.batch-upload-label {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;
+  background: #f3f4f6;
+  border: 1px solid #d1d9e6;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: #374151;
+  transition: background 0.2s;
+}
+
+.batch-upload-label:hover {
+  background: #e5e7eb;
+}
+
+.batch-upload-hint {
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.batch-btn-validar,
+.batch-btn-emitir {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.batch-btn-validar {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d9e6;
+}
+
+.batch-btn-validar:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.batch-btn-emitir {
+  background: linear-gradient(135deg, #0f1b2d, #1a3a5c);
+  color: #ffffff;
+}
+
+.batch-btn-emitir:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 27, 45, 0.3);
+}
+
+.batch-btn-validar:disabled,
+.batch-btn-emitir:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Error */
+.batch-error {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.85rem;
+  border: 1px solid #fecaca;
+  margin-bottom: 1.5rem;
+}
+
+/* Validation */
+.batch-validation,
+.batch-result {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.batch-structure-error {
+  text-align: center;
+}
+
+.batch-structure-error h3 {
+  color: #dc2626;
+  margin-bottom: 0.5rem;
+}
+
+.batch-structure-error p {
+  font-size: 0.85rem;
+  color: #5f6c7b;
+  margin: 0.4rem 0;
+}
+
+/* Summary stats */
+.batch-summary {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.batch-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  background: #f3f4f6;
+}
+
+.batch-stat--success {
+  background: #ecfdf5;
+}
+
+.batch-stat--error {
+  background: #fef2f2;
+}
+
+.batch-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.batch-stat--success .batch-stat-value { color: #059669; }
+.batch-stat--error .batch-stat-value { color: #dc2626; }
+
+.batch-stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.2rem;
+}
+
+/* Tables */
+.batch-errors-table,
+.batch-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.batch-errors-table h4 {
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+  color: #374151;
+}
+
+.batch-errors-table table,
+.batch-results-table {
+  width: 100%;
+}
+
+.batch-errors-table th,
+.batch-errors-table td,
+.batch-results-table th,
+.batch-results-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.batch-errors-table th,
+.batch-results-table th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.row-success { background: #f0fdf4; }
+.row-error { background: #fef2f2; }
+
+.batch-truncated {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 0.5rem;
+}
+
+.batch-btn-reset {
+  margin-top: 1.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d9e6;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.batch-btn-reset:hover {
+  background: #f3f4f6;
+}
+
+@media (max-width: 640px) {
+  .batch-header {
+    flex-direction: column;
+  }
+
+  .batch-summary {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}

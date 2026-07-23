@@ -330,7 +330,7 @@ function Facturas() {
               <span className="facturas-success-detail-value">{success.track_id}</span>
             </div>
             <div className="facturas-success-detail">
-              <span className="facturas-success-detail-label">e-NCF:</span>
+              <span className="facturas-success-detail-label">No. Comprobante:</span>
               <span className="facturas-success-detail-value">{success.e_ncf}</span>
             </div>
             <div className="facturas-success-detail">
@@ -361,7 +361,7 @@ function Facturas() {
     <div className="facturas">
       <div className="facturas-header">
         <h2>Facturación Electrónica</h2>
-        <p>Cree y envíe comprobantes fiscales electrónicos (e-CF).</p>
+        <p>Cree y envíe comprobantes fiscales electrónicos.</p>
         {isReadOnly && (
           <span className="facturas-readonly-badge" role="status">
             Modo solo lectura
@@ -386,10 +386,10 @@ function Facturas() {
               onChange={(e) => setTipoComprobante(e.target.value)}
               disabled={isReadOnly}
             >
-              <option value="E31">E31 - Factura de Crédito Fiscal</option>
-              <option value="E32">E32 - Factura de Consumo</option>
-              <option value="E33">E33 - Nota de Débito</option>
-              <option value="E34">E34 - Nota de Crédito</option>
+              <option value="E31">Factura de Crédito Fiscal</option>
+              <option value="E32">Factura de Consumo</option>
+              <option value="E33">Nota de Débito</option>
+              <option value="E34">Nota de Crédito</option>
               <option value="E41">E41 - Compras</option>
               <option value="E43">E43 - Gastos Menores</option>
               <option value="E44">E44 - Regímenes Especiales</option>
@@ -413,7 +413,7 @@ function Facturas() {
         {(tipoComprobante === 'E33' || tipoComprobante === 'E34') && (
           <div className="facturas-row" style={{ backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
             <div className="facturas-field">
-              <label htmlFor="ncf_modificado">NCF Modificado</label>
+              <label htmlFor="ncf_modificado">Comprobante a modificar</label>
               <input
                 id="ncf_modificado"
                 type="text"
@@ -424,7 +424,7 @@ function Facturas() {
               />
             </div>
             <div className="facturas-field">
-              <label htmlFor="fecha_ncf_modificado">Fecha NCF Modificado</label>
+              <label htmlFor="fecha_ncf_modificado">Fecha del comprobante original</label>
               <input
                 id="fecha_ncf_modificado"
                 type="date"

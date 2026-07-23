@@ -163,7 +163,7 @@ function FacturasRecibidas() {
       <div className="facturas-recibidas-header">
         <h2>Facturas Recibidas</h2>
         <button className="facturas-recibidas-btn-toggle" onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cerrar formulario' : '+ Registrar e-CF recibido'}
+          {showForm ? 'Cerrar formulario' : '+ Registrar factura recibida'}
         </button>
       </div>
 
@@ -193,7 +193,7 @@ function FacturasRecibidas() {
               />
             </div>
             <div className="facturas-recibidas-form-field">
-              <label>e-NCF</label>
+              <label>No. Comprobante</label>
               <input
                 type="text"
                 value={formData.e_ncf}
@@ -244,7 +244,7 @@ function FacturasRecibidas() {
           <thead>
             <tr>
               <th>Fecha</th>
-              <th>e-NCF</th>
+              <th>No. Comprobante</th>
               <th>Emisor</th>
               <th>Monto</th>
               <th>Estado</th>

@@ -6,9 +6,11 @@ import './Layout.css';
 const navItems = [
   { to: '/dashboard', label: 'Inicio', icon: '🏠' },
   { to: '/facturas', label: 'Facturas', icon: '🧾' },
+  { to: '/facturas/batch', label: 'Carga masiva', icon: '📂' },
+  { to: '/reportes', label: 'Reportes', icon: '📊' },
   { to: '/facturas-recibidas', label: 'Recibidas', icon: '📥' },
   { to: '/catalogo', label: 'Catálogo', icon: '📦' },
-  { to: '/secuencias-ncf', label: 'NCF', icon: '🔢' },
+  { to: '/secuencias-ncf', label: 'Secuencias', icon: '🔢' },
   { to: '/certificacion', label: 'Certificación', icon: '🏅' },
   { to: '/configuracion', label: 'Configuración', icon: '⚙️' },
   { to: '/mi-plan', label: 'Mi Plan', icon: '📋' },
@@ -32,9 +34,11 @@ const breadcrumbLabels: Record<string, string> = {
   dashboard: 'Inicio',
   facturas: 'Facturas',
   nueva: 'Nueva Factura',
+  batch: 'Carga Masiva',
+  reportes: 'Reportes Fiscales',
   'facturas-recibidas': 'Facturas Recibidas',
   catalogo: 'Catálogo',
-  'secuencias-ncf': 'Secuencias NCF',
+  'secuencias-ncf': 'Secuencias de Comprobantes',
   certificacion: 'Certificación',
   configuracion: 'Configuración',
   'mi-plan': 'Mi Plan',
@@ -55,6 +59,7 @@ function Layout() {
   const [permiteApi, setPermiteApi] = useState(false);
   const [userName, setUserName] = useState('');
   const [certAlert, setCertAlert] = useState<{ estado: string; dias_restantes: number | null; vence_en: string | null } | null>(null);
+  const [dgiiStatus, setDgiiStatus] = useState<'conectado' | 'contingencia' | 'verificando'>('conectado');
 
   const isSuperAdmin = userRole === 'super_admin';
 
@@ -96,6 +101,27 @@ function Layout() {
       }
     }
   }, [isAuthenticated]);
+
+  // Poll DGII connection status every 30s
+  useEffect(() => {
+    if (!isAuthenticated || isSuperAdmin) return;
+    const token = localStorage.getItem('access_token');
+
+    const checkDgii = () => {
+      fetch('/api/v1/dgii/estado-conexion', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) setDgiiStatus(data.estado);
+        })
+        .catch(() => {});
+    };
+
+    checkDgii();
+    const interval = setInterval(checkDgii, 30_000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, isSuperAdmin]);
 
   const handleLogout = async () => {
     await logout();
@@ -154,6 +180,20 @@ function Layout() {
 
         {isAuthenticated && (
           <div className="sidebar-bottom">
+            {dgiiStatus !== 'conectado' && (
+              <div className={`sidebar-dgii-status sidebar-dgii-status--${dgiiStatus}`} title={
+                dgiiStatus === 'contingencia'
+                  ? 'DGII no disponible. Las facturas se transmitirán automáticamente.'
+                  : 'Verificando conexión con DGII...'
+              }>
+                <span className="sidebar-link-icon">{dgiiStatus === 'contingencia' ? '🟡' : '🔄'}</span>
+                {!collapsed && (
+                  <span className="sidebar-link-label">
+                    {dgiiStatus === 'contingencia' ? 'Modo contingencia' : 'Verificando DGII'}
+                  </span>
+                )}
+              </div>
+            )}
             <div className="sidebar-user" title={userName}>
               <span className="sidebar-user-avatar">👤</span>
               {!collapsed && (

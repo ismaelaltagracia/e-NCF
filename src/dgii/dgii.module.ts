@@ -11,6 +11,7 @@ import { TransmisionService } from './transmision.service.js';
 import { RncValidatorService } from './rnc-validator.service.js';
 import { RncValidatorController } from './rnc-validator.controller.js';
 import { RecepcionController } from './recepcion.controller.js';
+import { DgiiStatusController } from './dgii-status.controller.js';
 import { EstadoPollingService } from './estado-polling.service.js';
 import { AnulacionService } from './anulacion.service.js';
 import { Empresa } from '../database/entities/empresa.entity.js';
@@ -38,7 +39,7 @@ import { WebhooksModule } from '../modules/webhooks/webhooks.module.js';
     AuthModule,
     WebhooksModule,
   ],
-  controllers: [RncValidatorController, RecepcionController],
+  controllers: [RncValidatorController, RecepcionController, DgiiStatusController],
   providers: [
     SemillaService,
     FirmaService,

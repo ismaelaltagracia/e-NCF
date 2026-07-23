@@ -163,7 +163,7 @@ function FacturasLista() {
           <input type="text" value={filtroRnc} onChange={(e) => setFiltroRnc(e.target.value)} placeholder="9 u 11 dígitos" maxLength={11} style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #dadce0', fontSize: '0.8rem' }} />
         </div>
         <div>
-          <label style={{ fontSize: '0.75rem', color: '#5f6368', display: 'block', marginBottom: '0.25rem' }}>e-NCF</label>
+          <label style={{ fontSize: '0.75rem', color: '#5f6368', display: 'block', marginBottom: '0.25rem' }}>No. Comprobante</label>
           <input type="text" value={filtroEncf} onChange={(e) => setFiltroEncf(e.target.value)} placeholder="Ej: E31000000" style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #dadce0', fontSize: '0.8rem' }} />
         </div>
         <div>
@@ -195,7 +195,7 @@ function FacturasLista() {
             <thead>
               <tr>
                 <th>Fecha</th>
-                <th>e-NCF</th>
+                <th>No. Comprobante</th>
                 <th>Receptor</th>
                 <th>Monto</th>
                 <th>Estado DGII</th>
@@ -415,7 +415,7 @@ function FacturaDetalle({ factura, onRefresh }: { factura: Factura; onRefresh: (
             onClick={async () => {
               const result = await Swal.fire({
                 title: '¿Anular esta factura?',
-                text: 'Esta acción no se puede deshacer. El e-NCF no será liberado.',
+                text: 'Esta acción no se puede deshacer. El número de comprobante no será liberado.',
                 input: 'textarea',
                 inputLabel: 'Motivo de anulación',
                 inputPlaceholder: 'Escriba el motivo...',

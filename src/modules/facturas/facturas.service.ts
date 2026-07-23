@@ -30,6 +30,8 @@ import type { CreateFacturaDto } from './dto/factura.schemas.js';
 import type { RequestContext } from '../../common/interfaces/request-context.interface.js';
 import { PDF_GENERATOR } from '../../infrastructure/pdf/pdf-generator.interface.js';
 import type { IPdfGeneratorService } from '../../infrastructure/pdf/pdf-generator.interface.js';
+import { EMAIL_SERVICE } from '../../infrastructure/email/email.interface.js';
+import type { IEmailService } from '../../infrastructure/email/email.interface.js';
 
 const BUCKET_FACTURAS_XML = 'facturas-xml';
 const BUCKET_FACTURAS_PDF = 'facturas-pdf';
@@ -65,6 +67,8 @@ export class FacturasService {
     public readonly retryQueue: IRetryQueueService | null,
     @Inject(PDF_GENERATOR)
     private readonly pdfGeneratorService: IPdfGeneratorService,
+    @Inject(EMAIL_SERVICE)
+    private readonly emailService: IEmailService,
   ) {}
 
   /**
@@ -416,7 +420,6 @@ export class FacturasService {
 
   /**
    * Envía la factura por correo electrónico con el PDF adjunto.
-   * En modo desarrollo sin SMTP configurado, retorna éxito simulado.
    */
   async enviarFacturaEmail(
     facturaId: string,
@@ -431,14 +434,59 @@ export class FacturasService {
       );
     }
 
-    // TODO: Implementar envío real con nodemailer cuando se configure SMTP
-    // Por ahora, retornar éxito simulado en modo desarrollo
-    this.logger.log(
-      `[EMAIL] Factura ${factura.e_ncf} enviada a ${email} (simulado)`,
+    // Download PDF from storage
+    const pdfBuffer = await this.storageProvider.download(
+      BUCKET_FACTURAS_PDF,
+      factura.pdf_s3_url,
     );
 
+    const empresa = await this.empresaRepo.findOne({ where: { id: empresaId } });
+    const empresaNombre = empresa?.nombre || 'Empresa';
+    const eNcf = factura.e_ncf || facturaId;
+
+    const result = await this.emailService.send({
+      to: email,
+      subject: `Factura electrónica ${eNcf} — ${empresaNombre}`,
+      html: `
+        <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 2rem;">
+          <h2 style="color: #0f1b2d; margin-bottom: 0.5rem;">${empresaNombre}</h2>
+          <p style="color: #5f6c7b; margin-bottom: 1.5rem;">Le adjuntamos su comprobante fiscal electrónico.</p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 1.5rem;">
+            <tr>
+              <td style="padding: 0.5rem 0; color: #6b7280; font-size: 0.9rem;">No. Comprobante</td>
+              <td style="padding: 0.5rem 0; font-weight: 600;">${eNcf}</td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem 0; color: #6b7280; font-size: 0.9rem;">Monto Total</td>
+              <td style="padding: 0.5rem 0; font-weight: 600;">RD$ ${Number(factura.payload_json?.['monto_total'] || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem 0; color: #6b7280; font-size: 0.9rem;">Fecha</td>
+              <td style="padding: 0.5rem 0;">${new Date(factura.created_at).toLocaleDateString('es-DO')}</td>
+            </tr>
+          </table>
+          <p style="color: #6b7280; font-size: 0.85rem;">El PDF adjunto contiene un código QR para verificación en la DGII.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0;" />
+          <p style="color: #9ca3af; font-size: 0.75rem;">Este correo fue generado automáticamente por el sistema e-NCF.</p>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: `factura-${eNcf}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+
+    if (!result.success) {
+      throw new BadRequestException('Error al enviar el correo. Intente nuevamente.');
+    }
+
+    this.logger.log(`Factura ${eNcf} enviada por email a ${email}`);
+
     return {
-      message: `Factura ${factura.e_ncf || facturaId} enviada exitosamente a ${email}`,
+      message: `Factura ${eNcf} enviada exitosamente a ${email}`,
       email,
     };
   }

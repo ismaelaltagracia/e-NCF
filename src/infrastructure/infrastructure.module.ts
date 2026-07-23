@@ -9,6 +9,8 @@ import { QR_GENERATOR } from './pdf/qr-generator.interface.js';
 import { QrGeneratorService } from './pdf/qr-generator.service.js';
 import { PDF_GENERATOR } from './pdf/pdf-generator.interface.js';
 import { PdfGeneratorService } from './pdf/pdf-generator.service.js';
+import { EMAIL_SERVICE } from './email/email.interface.js';
+import { EmailService } from './email/email.service.js';
 import { FacturaElectronica } from '../database/entities/factura-electronica.entity.js';
 
 /**
@@ -39,7 +41,11 @@ import { FacturaElectronica } from '../database/entities/factura-electronica.ent
       provide: PDF_GENERATOR,
       useClass: PdfGeneratorService,
     },
+    {
+      provide: EMAIL_SERVICE,
+      useClass: EmailService,
+    },
   ],
-  exports: [STORAGE_PROVIDER, SECRETS_PROVIDER, QR_GENERATOR, PDF_GENERATOR],
+  exports: [STORAGE_PROVIDER, SECRETS_PROVIDER, QR_GENERATOR, PDF_GENERATOR, EMAIL_SERVICE],
 })
 export class InfrastructureModule {}

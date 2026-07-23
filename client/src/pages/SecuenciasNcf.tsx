@@ -57,7 +57,7 @@ function SecuenciasNcf() {
   const handleDesactivar = async (secuencia: Secuencia) => {
     const result = await Swal.fire({
       title: '¿Desactivar secuencia?',
-      html: `Se desactivará la secuencia <strong>${secuencia.tipo_comprobante}</strong> (prefijo: ${secuencia.prefijo}).<br>No se podrán asignar más NCF de esta secuencia.`,
+      html: `Se desactivará la secuencia <strong>${secuencia.tipo_comprobante}</strong> (prefijo: ${secuencia.prefijo}).<br>No se podrán asignar más números de esta secuencia.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d93025',
@@ -114,7 +114,7 @@ function SecuenciasNcf() {
   return (
     <div className="secuencias">
       <div className="secuencias-header">
-        <h2>Secuencias NCF</h2>
+        <h2>Secuencias de Comprobantes</h2>
         <button className="secuencias-btn-add" onClick={handleNueva}>
           + Nueva Secuencia
         </button>
@@ -124,7 +124,7 @@ function SecuenciasNcf() {
         <p>Cargando...</p>
       ) : secuencias.length === 0 ? (
         <div className="secuencias-empty">
-          <p>No hay secuencias NCF configuradas.</p>
+          <p>No hay secuencias de comprobantes configuradas.</p>
           <p>Debe crear al menos una secuencia antes de poder emitir facturas.</p>
         </div>
       ) : (
@@ -269,7 +269,7 @@ function SecuenciaModal({ secuencia, onClose, onSaved }: { secuencia: Secuencia 
   return (
     <div className="secuencias-modal-overlay" onClick={onClose}>
       <div className="secuencias-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>{isEditing ? 'Editar Secuencia NCF' : 'Nueva Secuencia NCF'}</h3>
+        <h3>{isEditing ? 'Editar Secuencia' : 'Nueva Secuencia'}</h3>
 
         <form onSubmit={handleSubmit}>
           <div className="form-field">
@@ -336,7 +336,7 @@ function SecuenciaModal({ secuencia, onClose, onSaved }: { secuencia: Secuencia 
                 style={{ padding: '0.625rem', borderRadius: '6px', border: '1px solid #dadce0', width: '100%' }}
               />
               <span style={{ fontSize: '0.75rem', color: '#5f6368' }}>
-                Siguiente NCF que se asignará
+                Siguiente número que se asignará
               </span>
             </div>
           )}

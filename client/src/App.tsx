@@ -6,6 +6,8 @@ import Planes from './pages/Planes';
 import Configuracion from './pages/Configuracion';
 import Facturas from './pages/Facturas';
 import FacturasLista from './pages/FacturasLista';
+import FacturasBatch from './pages/FacturasBatch';
+import Reportes from './pages/Reportes';
 import Catalogo from './pages/Catalogo';
 import SecuenciasNcf from './pages/SecuenciasNcf';
 import FacturasRecibidas from './pages/FacturasRecibidas';
@@ -60,6 +62,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Facturas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="facturas/batch"
+          element={
+            <ProtectedRoute>
+              <FacturasBatch />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="reportes"
+          element={
+            <ProtectedRoute>
+              <Reportes />
             </ProtectedRoute>
           }
         />

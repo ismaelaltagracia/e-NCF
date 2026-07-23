@@ -21,6 +21,7 @@ import { FacturasRecibidasModule } from './modules/facturas-recibidas/facturas-r
 import { CertificacionModule } from './modules/certificacion/certificacion.module.js';
 import { AuditoriaModule } from './modules/auditoria/auditoria.module.js';
 import { WebhooksModule } from './modules/webhooks/webhooks.module.js';
+import { ReportesModule } from './modules/reportes/reportes.module.js';
 import { HealthModule } from './health/health.module.js';
 
 @Module({
@@ -47,6 +48,7 @@ import { HealthModule } from './health/health.module.js';
     CertificacionModule,
     AuditoriaModule,
     WebhooksModule,
+    ReportesModule,
     HealthModule,
   ],
   controllers: [AppController],

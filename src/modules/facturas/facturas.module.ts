@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { FacturasController } from './facturas.controller.js';
 import { FacturasService } from './facturas.service.js';
+import { BatchFacturasController } from './batch/batch-facturas.controller.js';
+import { BatchFacturasService } from './batch/batch-facturas.service.js';
 import { FacturaElectronica } from '../../database/entities/factura-electronica.entity.js';
 import { Empresa } from '../../database/entities/empresa.entity.js';
 import { DgiiModule } from '../../dgii/dgii.module.js';
@@ -28,8 +30,8 @@ import { AuditoriaModule } from '../auditoria/auditoria.module.js';
     AuthModule,
     AuditoriaModule,
   ],
-  controllers: [FacturasController],
-  providers: [FacturasService],
+  controllers: [FacturasController, BatchFacturasController],
+  providers: [FacturasService, BatchFacturasService],
   exports: [FacturasService],
 })
 export class FacturasModule {}
