@@ -15,6 +15,7 @@ import { Auditoria } from './entities/auditoria.entity.js';
 import { Webhook } from './entities/webhook.entity.js';
 import { RncContribuyente } from './entities/rnc-contribuyente.entity.js';
 import { FacturaRecibida } from './entities/factura-recibida.entity.js';
+import { Dispositivo } from './entities/dispositivo.entity.js';
 
 const entities = [
   Plan,
@@ -31,6 +32,7 @@ const entities = [
   Webhook,
   RncContribuyente,
   FacturaRecibida,
+  Dispositivo,
 ];
 
 /**

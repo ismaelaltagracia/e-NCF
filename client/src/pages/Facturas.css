@@ -71,6 +71,37 @@
   box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
 }
 
+.facturas-field select {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #d1d9e6;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #1f2937;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2rem;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.facturas-field select:focus {
+  outline: none;
+  border-color: #1a3a5c;
+  box-shadow: 0 0 0 3px rgba(26, 58, 92, 0.1);
+}
+
+.facturas-field select:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
 .facturas-field input[aria-invalid="true"] {
   border-color: #d93025;
 }

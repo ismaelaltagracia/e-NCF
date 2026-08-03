@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e-NCF Print Bridge — Panel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, sans-serif; background: #f5f7fa; color: #1f2937; }
+    .container { max-width: 700px; margin: 0 auto; padding: 2rem; }
+    h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.25rem; }
+    h1 span { color: #2563eb; }
+    .subtitle { color: #6b7280; font-size: 0.85rem; margin-bottom: 2rem; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+    .card h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
+    .field input, .field select { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid #d1d9e6; border-radius: 8px; font-size: 0.85rem; font-family: inherit; }
+    .field input:focus, .field select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .btn { padding: 0.55rem 1.2rem; border: none; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .btn-primary { background: linear-gradient(135deg, #0f1b2d, #1a3a5c); color: #fff; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,27,45,0.3); }
+    .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d9e6; }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .status-dot.green { background: #059669; }
+    .status-dot.yellow { background: #d97706; }
+    .status-dot.red { background: #dc2626; }
+    .status-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .badge { padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; }
+    .badge-ok { background: #ecfdf5; color: #059669; }
+    .badge-warn { background: #fffbeb; color: #d97706; }
+    .badge-err { background: #fef2f2; color: #dc2626; }
+    .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .pending-list { font-size: 0.8rem; color: #6b7280; }
+    .pending-item { padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6; }
+    #msg { margin-top: 0.75rem; font-size: 0.82rem; padding: 0.5rem; border-radius: 6px; display: none; }
+    #msg.ok { display: block; background: #ecfdf5; color: #059669; }
+    #msg.err { display: block; background: #fef2f2; color: #dc2626; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>e-<span>NCF</span> Print Bridge</h1>
+    <p class="subtitle">Panel de configuración local</p>
+
+    <!-- Status -->
+    <div class="card" id="status-card">
+      <h2>📡 Estado</h2>
+      <div class="status-row"><span class="status-dot" id="dot-api"></span> API: <span id="lbl-api">...</span></div>
+      <div class="status-row"><span class="status-dot" id="dot-dgii"></span> DGII: <span id="lbl-dgii">...</span></div>
+      <div class="status-row">📋 Plantilla: <strong id="lbl-template">...</strong></div>
+      <div class="status-row">📦 Pendientes: <strong id="lbl-pending">0</strong></div>
+    </div>
+
+    <!-- API Key -->
+    <div class="card">
+      <h2>🔑 Conexión API</h2>
+      <div class="field">
+        <label>API Key</label>
+        <input type="password" id="inp-apikey" placeholder="sk_live_xxxxxxxxxxxxxxxx">
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="saveApiKey()">Guardar y probar</button>
+        <button class="btn btn-secondary" onclick="testConnection()">Probar conexión</button>
+      </div>
+      <div id="msg"></div>
+    </div>
+
+    <!-- Template -->
+    <div class="card">
+      <h2>📄 Plantilla activa</h2>
+      <div class="field">
+        <label>Seleccionar plantilla de extracción</label>
+        <select id="sel-template"></select>
+      </div>
+      <button class="btn btn-secondary" onclick="saveTemplate()">Cambiar plantilla</button>
+    </div>
+
+    <!-- Pending -->
+    <div class="card">
+      <h2>📦 Cola de contingencia</h2>
+      <div id="pending-list" class="pending-list"><p>Sin pendientes</p></div>
+      <br>
+      <button class="btn btn-secondary" onclick="retryPending()">Reintentar pendientes</button>
+    </div>
+  </div>
+
+  <script>
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        document.getElementById('lbl-template').textContent = data.template;
+        document.getElementById('lbl-pending').textContent = data.pending_jobs;
+
+        const dotApi = document.getElementById('dot-api');
+        const lblApi = document.getElementById('lbl-api');
+        if (data.api_configured) {
+          const conn = await fetch('/api/test-connection').then(r => r.json());
+          dotApi.className = 'status-dot ' + (conn.connected ? 'green' : 'red');
+          lblApi.textContent = conn.connected ? 'Conectado' : 'Sin conexión';
+        } else {
+          dotApi.className = 'status-dot yellow';
+          lblApi.textContent = 'API Key no configurada';
+        }
+
+        const dgiiRes = await fetch('/api/dgii-status').then(r => r.json());
+        const dotDgii = document.getElementById('dot-dgii');
+        const lblDgii = document.getElementById('lbl-dgii');
+        dotDgii.className = 'status-dot ' + (dgiiRes.estado === 'conectado' ? 'green' : dgiiRes.estado === 'contingencia' ? 'yellow' : 'red');
+        lblDgii.textContent = dgiiRes.estado || 'Desconocido';
+      } catch { }
+    }
+
+    async function loadTemplates() {
+      const res = await fetch('/api/templates');
+      const list = await res.json();
+      const sel = document.getElementById('sel-template');
+      sel.innerHTML = list.map(t => `<option value="${t}">${t}</option>`).join('');
+      // Select current
+      const status = await fetch('/api/status').then(r => r.json());
+      sel.value = status.template;
+    }
+
+    async function loadPending() {
+      const res = await fetch('/api/pending');
+      const jobs = await res.json();
+      const el = document.getElementById('pending-list');
+      if (jobs.length === 0) { el.innerHTML = '<p>Sin pendientes</p>'; return; }
+      el.innerHTML = jobs.map(j => `<div class="pending-item">${j.document} — ${new Date(j.captured_at).toLocaleString()}</div>`).join('');
+    }
+
+    function showMsg(text, ok) {
+      const el = document.getElementById('msg');
+      el.textContent = text;
+      el.className = ok ? 'ok' : 'err';
+    }
+
+    async function saveApiKey() {
+      const key = document.getElementById('inp-apikey').value;
+      if (!key) { showMsg('Ingrese la API Key', false); return; }
+      const res = await fetch('/api/config/api-key', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ apiKey: key })
+      });
+      const data = await res.json();
+      if (data.connected) showMsg('✅ API Key guardada y conexión verificada', true);
+      else showMsg('⚠️ API Key guardada pero no se pudo conectar', false);
+      loadStatus();
+    }
+
+    async function testConnection() {
+      const res = await fetch('/api/test-connection');
+      const data = await res.json();
+      showMsg(data.connected ? '✅ Conexión exitosa' : '❌ No se pudo conectar', data.connected);
+      loadStatus();
+    }
+
+    async function saveTemplate() {
+      const tmpl = document.getElementById('sel-template').value;
+      await fetch('/api/config/template', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ template: tmpl })
+      });
+      showMsg('Plantilla actualizada: ' + tmpl, true);
+      loadStatus();
+    }
+
+    async function retryPending() {
+      const res = await fetch('/api/pending/retry', { method: 'POST' });
+      const data = await res.json();
+      showMsg(`Reintento completado. Pendientes: ${data.remaining}`, true);
+      loadPending();
+      loadStatus();
+    }
+
+    // Init
+    loadStatus();
+    loadTemplates();
+    loadPending();
+    setInterval(loadStatus, 30000);
+  </script>
+</body>
+</html>

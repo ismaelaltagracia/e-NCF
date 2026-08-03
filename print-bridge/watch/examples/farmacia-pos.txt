@@ -1,0 +1,27 @@
+================================
+   FARMACIA SAN JOSE S.R.L.
+   RNC Emisor: 101234567
+   Av. 27 de Febrero #52
+   Santo Domingo, D.N.
+================================
+Fecha: 29/07/2026  Hora: 14:32
+Cajero: María
+RNC: 131456789
+Cliente: DISTRIBUIDORA MÉDICA DEL CARIBE
+
+---------- DETALLE ----------
+Acetaminofén 500mg         2   150.00
+Ibuprofeno 400mg           3   85.50
+Omeprazol 20mg             1   220.00
+Vitamina C 1000mg          5   45.00
+Alcohol 70% 500ml          2   175.00
+---------- TOTAL ----------
+SUBTOTAL: $1,101.50
+ITBIS 18%: $198.27
+TOTAL: $1,299.77
+
+Forma de pago: Efectivo
+Cambio: $200.23
+================================
+     ¡Gracias por su compra!
+================================

@@ -1,0 +1,61 @@
+{
+  "nombre": "POS Genérico",
+  "version": "1.0",
+  "formato_entrada": "text",
+  "tipo_comprobante_default": "E32",
+  "separador_items": "\n",
+  "mapeo": {
+    "rnc_receptor": {
+      "tipo": "regex",
+      "patron": "RNC[:\\s]*(\\d{9,11})",
+      "grupo": 1,
+      "obligatorio": false,
+      "default": ""
+    },
+    "nombre_receptor": {
+      "tipo": "regex",
+      "patron": "Cliente[:\\s]*(.*)",
+      "grupo": 1,
+      "obligatorio": false,
+      "default": "Consumidor Final"
+    },
+    "tipo_comprobante": {
+      "tipo": "regex",
+      "patron": "Tipo[:\\s]*(E[0-9]{2})",
+      "grupo": 1,
+      "obligatorio": false,
+      "default": "E32"
+    }
+  },
+  "items": {
+    "inicio": {
+      "tipo": "regex",
+      "patron": "---+\\s*DETALLE\\s*---+"
+    },
+    "fin": {
+      "tipo": "regex",
+      "patron": "---+\\s*(SUB)?TOTAL\\s*---+"
+    },
+    "patron_linea": "^(.{1,30})\\s+(\\d+)\\s+([\\d,.]+)$",
+    "campos_linea": {
+      "descripcion": 1,
+      "cantidad": 2,
+      "precio_unitario": 3
+    }
+  },
+  "totales": {
+    "subtotal": {
+      "tipo": "regex",
+      "patron": "SUBTOTAL[:\\s]*\\$?([\\d,.]+)"
+    },
+    "itbis": {
+      "tipo": "regex",
+      "patron": "ITBIS[:\\s]*\\$?([\\d,.]+)"
+    },
+    "total": {
+      "tipo": "regex",
+      "patron": "TOTAL[:\\s]*\\$?([\\d,.]+)"
+    }
+  },
+  "tasa_itbis_default": 18
+}

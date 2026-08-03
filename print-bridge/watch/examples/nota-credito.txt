@@ -1,0 +1,20 @@
+═══ NOTA DE CRÉDITO ═══
+Empresa: SERVICIOS INTEGRALES RD SRL
+RNC Emisor: 101678901
+
+Tipo: E34
+NCF Original: E310010100000008
+Fecha: 2026-07-29
+
+Cliente: CORP. DE ALIMENTOS TROPICALES
+RNC: 131234567
+
+Motivo: Devolución parcial de mercancía
+
+Código  Descripción                Cant    Precio      Total
+------  -------------------------  ----    ---------   ---------
+PR-050  Aceite de coco 500ml        20      350.00     7,000.00
+
+                            Sub-Total:                 7,000.00
+                            ITBIS 18%:                 1,260.00
+                            TOTAL:                     8,260.00

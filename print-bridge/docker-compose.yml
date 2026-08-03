@@ -1,0 +1,12 @@
+services:
+  print-bridge:
+    build: .
+    container_name: encf-print-bridge
+    ports:
+      - "9876:9876"
+    volumes:
+      - ./config:/app/config
+      - ./watch:/app/watch
+    environment:
+      - ASPNETCORE_URLS=http://+:9876
+    restart: unless-stopped

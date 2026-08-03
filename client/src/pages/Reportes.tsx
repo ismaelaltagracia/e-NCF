@@ -45,8 +45,25 @@ function Reportes() {
     }
   };
 
-  const handleDescargar = (formato: '606' | '607' | '608') => {
-    window.open(`/api/v1/reportes/${formato}?anio=${anio}&mes=${mes}`, '_blank');
+  const handleDescargar = async (formato: '606' | '607' | '608') => {
+    try {
+      const res = await fetch(`/api/v1/reportes/${formato}?anio=${anio}&mes=${mes}`, { headers });
+      if (!res.ok) {
+        setError('Error al descargar reporte');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${formato}_${anio}${String(mes).padStart(2, '0')}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('Error al descargar reporte');
+    }
   };
 
   return (

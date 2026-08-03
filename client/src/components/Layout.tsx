@@ -135,7 +135,7 @@ function Layout() {
 
   const breadcrumbs = buildBreadcrumb();
 
-  if (location.pathname === '/login' || location.pathname === '/registro') {
+  if (location.pathname === '/login' || location.pathname === '/registro' || location.pathname === '/inicio') {
     return <Outlet />;
   }
 

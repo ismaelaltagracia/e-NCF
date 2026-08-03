@@ -390,11 +390,11 @@ function Facturas() {
               <option value="E32">Factura de Consumo</option>
               <option value="E33">Nota de Débito</option>
               <option value="E34">Nota de Crédito</option>
-              <option value="E41">E41 - Compras</option>
-              <option value="E43">E43 - Gastos Menores</option>
-              <option value="E44">E44 - Regímenes Especiales</option>
-              <option value="E45">E45 - Gubernamental</option>
-              <option value="E46">E46 - Exportaciones</option>
+              <option value="E41">Compras</option>
+              <option value="E43">Gastos Menores</option>
+              <option value="E44">Regímenes Especiales</option>
+              <option value="E45">Gubernamental</option>
+              <option value="E46">Exportaciones</option>
             </select>
           </div>
           <div className="facturas-field">

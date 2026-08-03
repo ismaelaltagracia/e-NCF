@@ -1,0 +1,25 @@
+                    FACTURA DE VENTA
+
+Empresa: CONSULTORES TECH RD S.R.L.
+RNC Emisor: 101567890
+Dirección: C/ El Conde #15, Zona Colonial
+
+Factura No: FAC-2026-0342
+Fecha: 29 de julio de 2026
+
+Cliente: INVERSIONES GRUPO NORTE SAS
+RNC: 130987654
+
+Descripción                         Cantidad    Precio Unit.    Total
+------------------------------------------------------------------------
+Consultoría sistemas (horas)             40       2,500.00    100,000.00
+Licencia software anual                   1      15,000.00     15,000.00
+Soporte técnico mensual (3 meses)         3       5,000.00     15,000.00
+Capacitación personal (días)              2       8,000.00     16,000.00
+
+Sub-Total:                                                   146,000.00
+ITBIS 18%:                                                    26,280.00
+Total General:                                               172,280.00
+
+Condiciones: Crédito 30 días
+Cuenta: Banreservas 010-123456-7

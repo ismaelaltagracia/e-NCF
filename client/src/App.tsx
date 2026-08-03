@@ -8,6 +8,7 @@ import Facturas from './pages/Facturas';
 import FacturasLista from './pages/FacturasLista';
 import FacturasBatch from './pages/FacturasBatch';
 import Reportes from './pages/Reportes';
+import Landing from './pages/Landing';
 import Catalogo from './pages/Catalogo';
 import SecuenciasNcf from './pages/SecuenciasNcf';
 import FacturasRecibidas from './pages/FacturasRecibidas';
@@ -36,7 +37,8 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
+        <Route index element={<Navigate to={isAuthenticated ? '/dashboard' : '/inicio'} replace />} />
+        <Route path="inicio" element={<Landing />} />
         <Route path="login" element={<Login />} />
         <Route path="planes" element={<Planes />} />
         <Route path="documentacion" element={<Documentacion />} />
@@ -170,7 +172,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
+        <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/inicio'} replace />} />
       </Route>
     </Routes>
   );

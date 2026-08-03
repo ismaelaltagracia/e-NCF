@@ -22,6 +22,7 @@ import { CertificacionModule } from './modules/certificacion/certificacion.modul
 import { AuditoriaModule } from './modules/auditoria/auditoria.module.js';
 import { WebhooksModule } from './modules/webhooks/webhooks.module.js';
 import { ReportesModule } from './modules/reportes/reportes.module.js';
+import { DispositivosModule } from './modules/dispositivos/dispositivos.module.js';
 import { HealthModule } from './health/health.module.js';
 
 @Module({
@@ -49,6 +50,7 @@ import { HealthModule } from './health/health.module.js';
     AuditoriaModule,
     WebhooksModule,
     ReportesModule,
+    DispositivosModule,
     HealthModule,
   ],
   controllers: [AppController],

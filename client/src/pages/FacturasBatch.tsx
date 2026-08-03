@@ -115,8 +115,25 @@ function FacturasBatch() {
     }
   };
 
-  const handleDescargarPlantilla = () => {
-    window.open('/api/v1/facturas/batch/plantilla', '_blank');
+  const handleDescargarPlantilla = async () => {
+    try {
+      const res = await fetch('/api/v1/facturas/batch/plantilla', { headers });
+      if (!res.ok) {
+        setError('Error al descargar plantilla');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'plantilla-facturas.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('Error al descargar plantilla');
+    }
   };
 
   const handleReset = () => {

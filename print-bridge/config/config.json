@@ -1,0 +1,34 @@
+{
+  "api": {
+    "base_url": "http://localhost:3000",
+    "api_key": ""
+  },
+  "impresora_virtual": {
+    "nombre": "e-NCF Print Bridge",
+    "puerto": "ENCF_PORT",
+    "formato_captura": "text"
+  },
+  "impresora_fisica": {
+    "nombre": "",
+    "tipo": "termica",
+    "ancho_mm": 80
+  },
+  "ruteo_impresoras": [
+    {
+      "tipos": ["*"],
+      "impresora": "",
+      "formato": "termica_80mm"
+    }
+  ],
+  "plantilla_activa": "pos-generico",
+  "comportamiento": {
+    "imprimir_despues_de_enviar": true,
+    "agregar_qr": true,
+    "agregar_ncf_al_recibo": true,
+    "reintentar_si_falla_dgii": true,
+    "max_reintentos": 3,
+    "timeout_api_ms": 30000,
+    "modo_contingencia": true,
+    "log_level": "info"
+  }
+}

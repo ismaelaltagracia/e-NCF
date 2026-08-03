@@ -1,0 +1,59 @@
+{
+  "nombre": "Factura desde Excel",
+  "version": "1.0",
+  "formato_entrada": "text",
+  "tipo_comprobante_default": "E31",
+  "separador_items": "\n",
+  "mapeo": {
+    "rnc_receptor": {
+      "tipo": "regex",
+      "patron": "RNC[:\\s]*(\\d{9,11})",
+      "grupo": 1,
+      "obligatorio": true,
+      "default": ""
+    },
+    "nombre_receptor": {
+      "tipo": "regex",
+      "patron": "(?:Cliente|Empresa|Razón Social)[:\\s]*(.*)",
+      "grupo": 1,
+      "obligatorio": false,
+      "default": ""
+    },
+    "tipo_comprobante": {
+      "tipo": "fijo",
+      "default": "E31"
+    }
+  },
+  "items": {
+    "inicio": {
+      "tipo": "regex",
+      "patron": "(?:Descripción|Detalle|Item).*(?:Cantidad|Cant).*(?:Precio|P\\.U)"
+    },
+    "fin": {
+      "tipo": "regex",
+      "patron": "^\\s*$"
+    },
+    "patron_linea": "^(.{1,40})\\s+(\\d+[.,]?\\d*)\\s+([\\d,.]+)\\s+([\\d,.]+)$",
+    "campos_linea": {
+      "descripcion": 1,
+      "cantidad": 2,
+      "precio_unitario": 3,
+      "subtotal_linea": 4
+    }
+  },
+  "totales": {
+    "subtotal": {
+      "tipo": "regex",
+      "patron": "Sub-?[Tt]otal[:\\s]*\\$?([\\d,.]+)"
+    },
+    "itbis": {
+      "tipo": "regex",
+      "patron": "(?:ITBIS|IVA|Impuesto)[:\\s]*\\$?([\\d,.]+)"
+    },
+    "total": {
+      "tipo": "regex",
+      "patron": "(?:TOTAL|Total General)[:\\s]*\\$?([\\d,.]+)"
+    }
+  },
+  "tasa_itbis_default": 18
+}

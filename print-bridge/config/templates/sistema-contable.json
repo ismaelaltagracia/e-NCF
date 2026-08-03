@@ -1,0 +1,62 @@
+{
+  "nombre": "Sistema Contable Genérico",
+  "version": "1.0",
+  "formato_entrada": "text",
+  "tipo_comprobante_default": "E31",
+  "separador_items": "\n",
+  "mapeo": {
+    "rnc_receptor": {
+      "tipo": "regex",
+      "patron": "(?:RNC|NIF|Cédula)[:\\s./]*(\\d{9,11})",
+      "grupo": 1,
+      "obligatorio": true,
+      "default": ""
+    },
+    "nombre_receptor": {
+      "tipo": "regex",
+      "patron": "(?:Cliente|Nombre|Razón Social|A)[:\\s]*(.*)",
+      "grupo": 1,
+      "obligatorio": false,
+      "default": ""
+    },
+    "tipo_comprobante": {
+      "tipo": "regex",
+      "patron": "(?:Tipo|NCF|Comprobante)[:\\s]*(E\\d{2})",
+      "grupo": 1,
+      "obligatorio": false,
+      "default": "E31"
+    }
+  },
+  "items": {
+    "inicio": {
+      "tipo": "regex",
+      "patron": "(?:Código|Cod)\\s+(?:Descripción|Desc)\\s+(?:Cant|Qty)"
+    },
+    "fin": {
+      "tipo": "regex",
+      "patron": "^[\\s-]*(?:Sub|TOTAL|---)"
+    },
+    "patron_linea": "^\\s*\\S+\\s+(.{1,35})\\s+(\\d+[.,]?\\d*)\\s+([\\d,.]+)\\s+([\\d,.]+)\\s*$",
+    "campos_linea": {
+      "descripcion": 1,
+      "cantidad": 2,
+      "precio_unitario": 3,
+      "subtotal_linea": 4
+    }
+  },
+  "totales": {
+    "subtotal": {
+      "tipo": "regex",
+      "patron": "Sub[\\-\\s]?[Tt]otal[:\\s]*\\$?\\s*([\\d,.]+)"
+    },
+    "itbis": {
+      "tipo": "regex",
+      "patron": "(?:ITBIS|IVA|Tax)[:\\s]*\\$?\\s*([\\d,.]+)"
+    },
+    "total": {
+      "tipo": "regex",
+      "patron": "(?:TOTAL|Total a Pagar|Neto)[:\\s]*\\$?\\s*([\\d,.]+)"
+    }
+  },
+  "tasa_itbis_default": 18
+}

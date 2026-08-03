@@ -1,0 +1,28 @@
+╔══════════════════════════════════════════════════════╗
+║  IMPORTADORA DOMINICANA DE EQUIPOS S.A.            ║
+║  RNC: 101890123                                     ║
+║  Autopista Duarte Km 12, Santiago                   ║
+╠══════════════════════════════════════════════════════╣
+║  FACTURA DE CRÉDITO FISCAL                         ║
+║  Tipo: E31                   No: 000456            ║
+║  Fecha: 2026-07-29           Vence: 2026-08-28     ║
+╠══════════════════════════════════════════════════════╣
+║  A: FERRETERÍA EL CONSTRUCTOR SRL                  ║
+║  NIF: 101345678                                    ║
+║  Dir: Av. Independencia #89, La Vega               ║
+╠══════════════════════════════════════════════════════╣
+
+Código  Descripción                      Cant   P.Unitario    Total
+------  -------------------------------- ----   ----------    --------
+EQ-001  Taladro industrial 1/2"            5     4,500.00    22,500.00
+EQ-015  Sierra circular 7-1/4"            3     6,200.00    18,600.00
+EQ-030  Compresor 50L 2HP                 2    12,000.00    24,000.00
+MT-100  Juego llaves combinadas          10       850.00     8,500.00
+MT-205  Cinta métrica 5m                 20       125.00     2,500.00
+
+                                          Sub-Total:        76,100.00
+                                          ITBIS 18%:        13,698.00
+                                          TOTAL:            89,798.00
+
+Observaciones: Entrega en almacén del cliente
+Vendedor: Roberto Martínez

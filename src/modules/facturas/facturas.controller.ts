@@ -31,11 +31,12 @@ import type { RequestContext } from '../../common/interfaces/request-context.int
 import { getCorrelationId } from '../../common/interceptors/correlation-id.interceptor.js';
 import { AnulacionService } from '../../dgii/anulacion.service.js';
 import { AuditoriaService } from '../auditoria/auditoria.service.js';
+import { DeviceValidationGuard } from '../../common/guards/device-validation.guard.js';
 import { EstadoDgii } from '../../database/enums.js';
 
 @ApiTags('Facturas')
 @Controller('api/v1/facturas')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, DeviceValidationGuard)
 export class FacturasController {
   constructor(
     private readonly facturasService: FacturasService,
