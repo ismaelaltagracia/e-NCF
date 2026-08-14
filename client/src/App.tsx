@@ -9,6 +9,8 @@ import FacturasLista from './pages/FacturasLista';
 import FacturasBatch from './pages/FacturasBatch';
 import Reportes from './pages/Reportes';
 import Landing from './pages/Landing';
+import ContadorPanel from './pages/Contador';
+import RegistroContador from './pages/RegistroContador';
 import Catalogo from './pages/Catalogo';
 import SecuenciasNcf from './pages/SecuenciasNcf';
 import FacturasRecibidas from './pages/FacturasRecibidas';
@@ -43,6 +45,7 @@ function App() {
         <Route path="planes" element={<Planes />} />
         <Route path="documentacion" element={<Documentacion />} />
         <Route path="registro" element={<Onboarding />} />
+        <Route path="registro-contador" element={<RegistroContador />} />
         <Route
           path="dashboard"
           element={
@@ -80,6 +83,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Reportes />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="contador"
+          element={
+            <ProtectedRoute>
+              <ContadorPanel />
             </ProtectedRoute>
           }
         />

@@ -1,0 +1,272 @@
+.contador {
+  animation: contFadeIn 0.4s ease-out;
+}
+
+@keyframes contFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.contador-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.contador-header h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.contador-header p {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.contador-btn-add {
+  padding: 0.55rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  background: linear-gradient(135deg, #0f1b2d, #1a3a5c);
+  color: #ffffff;
+  transition: all 0.15s;
+}
+
+.contador-btn-add:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 27, 45, 0.3);
+}
+
+/* Summary */
+.contador-summary {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.contador-stat {
+  flex: 1;
+  min-width: 140px;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.contador-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.contador-stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.2rem;
+}
+
+/* Enterprise list */
+.contador-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.contador-empresa-card {
+  padding: 1.25rem;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.contador-empresa-card:hover {
+  border-color: #1a3a5c;
+  box-shadow: 0 2px 8px rgba(26, 58, 92, 0.08);
+}
+
+.contador-empresa-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.contador-empresa-nombre {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1f2937;
+}
+
+.contador-empresa-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.badge-descuento {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.badge-normal {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.contador-empresa-rnc {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.contador-empresa-plan {
+  font-size: 0.82rem;
+  color: #374151;
+}
+
+.contador-empresa-precio {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1a3a5c;
+}
+
+.precio-tachado {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-weight: 400;
+  margin-right: 0.5rem;
+}
+
+/* Factura preview */
+.contador-factura {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.contador-factura h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.contador-factura-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.contador-factura-tabla th,
+.contador-factura-tabla td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.contador-factura-tabla th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.contador-factura-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0 0;
+  margin-top: 0.5rem;
+  border-top: 2px solid #e5e7eb;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* Modal */
+.contador-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.contador-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 450px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.contador-modal h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.contador-modal .form-field {
+  margin-bottom: 1rem;
+}
+
+.contador-modal .form-field label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.3rem;
+}
+
+.contador-modal .form-field input,
+.contador-modal .form-field select {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #d1d9e6;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.contador-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.contador-modal-actions button {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+}
+
+.btn-modal-primary {
+  background: linear-gradient(135deg, #0f1b2d, #1a3a5c);
+  color: #fff;
+}
+
+.btn-modal-cancel {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d9e6 !important;
+}

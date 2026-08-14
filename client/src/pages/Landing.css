@@ -410,6 +410,102 @@
   box-shadow: 0 4px 12px rgba(15, 27, 45, 0.3);
 }
 
+/* ─── Contador section ─── */
+.landing-contador {
+  padding: 4rem 2rem;
+  background: #f0f5ff;
+  border-top: 1px solid #dbeafe;
+  border-bottom: 1px solid #dbeafe;
+}
+
+.contador-landing-inner {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.contador-landing-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #1a3a5c;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 1rem;
+}
+
+.contador-landing-content h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f1b2d;
+  margin-bottom: 0.75rem;
+}
+
+.contador-landing-desc {
+  font-size: 1rem;
+  color: #4b5563;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.contador-landing-benefits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.contador-benefit {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.contador-benefit span:first-child {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.contador-benefit strong {
+  display: block;
+  font-size: 0.9rem;
+  color: #1f2937;
+  margin-bottom: 2px;
+}
+
+.contador-benefit p {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.contador-landing-btn {
+  display: inline-block;
+  padding: 0.8rem 2rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0f1b2d, #1a3a5c);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.contador-landing-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 27, 45, 0.3);
+}
+
+@media (max-width: 640px) {
+  .contador-landing-benefits {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ─── FAQ ─── */
 .landing-faq {
   padding: 4rem 2rem;

@@ -90,6 +90,81 @@
   padding: 0.75rem 0.5rem;
 }
 
+/* Empresa selector */
+.sidebar-empresa-selector {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.sidebar-empresa-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.sidebar-empresa-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-empresa-current {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-empresa-arrow {
+  font-size: 0.6rem;
+  opacity: 0.6;
+}
+
+.sidebar-empresa-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: #1a2a3c;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 50;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.sidebar-empresa-option {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.sidebar-empresa-option:hover {
+  background: rgba(100, 181, 246, 0.15);
+  color: #64b5f6;
+}
+
 .sidebar-link {
   display: flex;
   align-items: center;

@@ -8,6 +8,7 @@ import 'features/recibidas/presentation/recibidas_screen.dart';
 import 'features/reportes/presentation/reportes_screen.dart';
 import 'features/catalogo/presentation/catalogo_screen.dart';
 import 'features/configuracion/presentation/configuracion_screen.dart';
+import 'features/contador/presentation/contador_panel_screen.dart';
 
 class EncfApp extends StatefulWidget {
   const EncfApp({super.key});
@@ -115,6 +116,15 @@ class _MoreScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        ListTile(
+          leading: const Icon(Icons.business_outlined),
+          title: const Text('Mis Empresas (Contador)'),
+          subtitle: const Text('Gestiona múltiples empresas', style: TextStyle(fontSize: 11)),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(context, MaterialPageRoute(
+            builder: (_) => ContadorPanelScreen(apiClient: apiClient),
+          )),
+        ),
         ListTile(
           leading: const Icon(Icons.inventory_2_outlined),
           title: const Text('Catálogo'),

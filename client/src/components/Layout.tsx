@@ -8,6 +8,7 @@ const navItems = [
   { to: '/facturas', label: 'Facturas', icon: '🧾' },
   { to: '/facturas/batch', label: 'Carga masiva', icon: '📂' },
   { to: '/reportes', label: 'Reportes', icon: '📊' },
+  { to: '/contador', label: 'Mis Empresas', icon: '🏢' },
   { to: '/facturas-recibidas', label: 'Recibidas', icon: '📥' },
   { to: '/catalogo', label: 'Catálogo', icon: '📦' },
   { to: '/secuencias-ncf', label: 'Secuencias', icon: '🔢' },
@@ -36,6 +37,7 @@ const breadcrumbLabels: Record<string, string> = {
   nueva: 'Nueva Factura',
   batch: 'Carga Masiva',
   reportes: 'Reportes Fiscales',
+  contador: 'Panel de Contador',
   'facturas-recibidas': 'Facturas Recibidas',
   catalogo: 'Catálogo',
   'secuencias-ncf': 'Secuencias de Comprobantes',
@@ -60,6 +62,8 @@ function Layout() {
   const [userName, setUserName] = useState('');
   const [certAlert, setCertAlert] = useState<{ estado: string; dias_restantes: number | null; vence_en: string | null } | null>(null);
   const [dgiiStatus, setDgiiStatus] = useState<'conectado' | 'contingencia' | 'verificando'>('conectado');
+  const [contadorEmpresas, setContadorEmpresas] = useState<Array<{ empresa_id: string; empresa: { nombre: string } }>>([]);
+  const [showEmpresaSelector, setShowEmpresaSelector] = useState(false);
 
   const isSuperAdmin = userRole === 'super_admin';
 
@@ -123,6 +127,20 @@ function Layout() {
     return () => clearInterval(interval);
   }, [isAuthenticated, isSuperAdmin]);
 
+  // Load contador empresas (if user is a contador)
+  useEffect(() => {
+    if (!isAuthenticated || isSuperAdmin) return;
+    const token = localStorage.getItem('access_token');
+    fetch('/api/v1/contador/empresas', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) setContadorEmpresas(data);
+      })
+      .catch(() => {});
+  }, [isAuthenticated, isSuperAdmin]);
+
   const handleLogout = async () => {
     await logout();
     navigate('/login', { replace: true });
@@ -135,7 +153,7 @@ function Layout() {
 
   const breadcrumbs = buildBreadcrumb();
 
-  if (location.pathname === '/login' || location.pathname === '/registro' || location.pathname === '/inicio') {
+  if (location.pathname === '/login' || location.pathname === '/registro' || location.pathname === '/registro-contador' || location.pathname === '/inicio') {
     return <Outlet />;
   }
 
@@ -163,6 +181,47 @@ function Layout() {
         </div>
 
         <nav className="sidebar-nav">
+          {/* Empresa selector for contadores */}
+          {contadorEmpresas.length > 1 && !collapsed && (
+            <div className="sidebar-empresa-selector">
+              <button
+                className="sidebar-empresa-btn"
+                onClick={() => setShowEmpresaSelector(!showEmpresaSelector)}
+              >
+                <span>🏢</span>
+                <span className="sidebar-empresa-current">{userName}</span>
+                <span className="sidebar-empresa-arrow">{showEmpresaSelector ? '▲' : '▼'}</span>
+              </button>
+              {showEmpresaSelector && (
+                <div className="sidebar-empresa-dropdown">
+                  {contadorEmpresas.map((ce) => (
+                    <button
+                      key={ce.empresa_id}
+                      className="sidebar-empresa-option"
+                      onClick={async () => {
+                        const token = localStorage.getItem('access_token');
+                        const res = await fetch('/api/v1/contador/cambiar-empresa', {
+                          method: 'POST',
+                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ empresa_id: ce.empresa_id }),
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          if (data.access_token) {
+                            localStorage.setItem('access_token', data.access_token);
+                            window.location.href = '/dashboard';
+                          }
+                        }
+                      }}
+                    >
+                      {ce.empresa.nombre}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {currentNavItems.map((item) => (
             <NavLink
               key={item.to}

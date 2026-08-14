@@ -16,6 +16,10 @@ import { Webhook } from './entities/webhook.entity.js';
 import { RncContribuyente } from './entities/rnc-contribuyente.entity.js';
 import { FacturaRecibida } from './entities/factura-recibida.entity.js';
 import { Dispositivo } from './entities/dispositivo.entity.js';
+import { Contador } from './entities/contador.entity.js';
+import { ContadorEmpresa } from './entities/contador-empresa.entity.js';
+import { FacturaContador } from './entities/factura-contador.entity.js';
+import { ContadorUsuario } from './entities/contador-usuario.entity.js';
 
 const entities = [
   Plan,
@@ -33,6 +37,10 @@ const entities = [
   RncContribuyente,
   FacturaRecibida,
   Dispositivo,
+  Contador,
+  ContadorEmpresa,
+  FacturaContador,
+  ContadorUsuario,
 ];
 
 /**

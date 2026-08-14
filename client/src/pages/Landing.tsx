@@ -212,6 +212,53 @@ function Landing() {
         </div>
       </section>
 
+      {/* ─── Contadores ─── */}
+      <section className="landing-contador">
+        <div className="contador-landing-inner">
+          <div className="contador-landing-content">
+            <span className="contador-landing-badge">Para contadores</span>
+            <h2>Gestiona todos tus clientes desde un solo lugar</h2>
+            <p className="contador-landing-desc">
+              Si eres contador o firma contable, administra la facturación electrónica de todas 
+              las empresas de tus clientes con un solo login. Sin cambiar entre cuentas.
+            </p>
+            <div className="contador-landing-benefits">
+              <div className="contador-benefit">
+                <span>💰</span>
+                <div>
+                  <strong>20% de descuento</strong>
+                  <p>A partir de la 3ra empresa, cada plan tiene 20% menos.</p>
+                </div>
+              </div>
+              <div className="contador-benefit">
+                <span>📊</span>
+                <div>
+                  <strong>Reportes centralizados</strong>
+                  <p>606, 607 y 608 de cada empresa en un clic.</p>
+                </div>
+              </div>
+              <div className="contador-benefit">
+                <span>🧾</span>
+                <div>
+                  <strong>Una sola factura mensual</strong>
+                  <p>Facturación consolidada por todas las empresas que gestiones.</p>
+                </div>
+              </div>
+              <div className="contador-benefit">
+                <span>👥</span>
+                <div>
+                  <strong>Equipo con acceso controlado</strong>
+                  <p>Crea usuarios y asígnales solo las empresas que deben ver.</p>
+                </div>
+              </div>
+            </div>
+            <Link to="/registro-contador" className="contador-landing-btn">
+              Registrarme como contador
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ─── FAQ ─── */}
       <section className="landing-faq" id="faq">
         <div className="faq-inner">

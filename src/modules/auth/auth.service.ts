@@ -15,6 +15,7 @@ import { createHash, randomUUID } from 'crypto';
 import { Usuario } from '../../database/entities/usuario.entity.js';
 import { RefreshToken } from '../../database/entities/refresh-token.entity.js';
 import { SuperAdmin } from '../../database/entities/super-admin.entity.js';
+import { Empresa } from '../../database/entities/empresa.entity.js';
 import { EstadoEmpresa, EstadoToken } from '../../database/enums.js';
 import * as SecretsInterface from '../../infrastructure/secrets/secrets.interface.js';
 import type { ISecretsProvider } from '../../infrastructure/secrets/secrets.interface.js';
@@ -32,6 +33,8 @@ export class AuthService {
   constructor(
     @InjectRepository(Usuario)
     private readonly usuarioRepo: Repository<Usuario>,
+    @InjectRepository(Empresa)
+    private readonly empresaRepo: Repository<Empresa>,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepo: Repository<RefreshToken>,
     @InjectRepository(SuperAdmin)
@@ -299,6 +302,24 @@ export class AuthService {
         expiresIn: ACCESS_TOKEN_TTL_SECONDS,
       },
     );
+  }
+
+  /**
+   * Genera un access token para cambio de contexto de contador.
+   * Permite al contador operar como admin de la empresa seleccionada.
+   */
+  async generateAccessTokenForContador(claims: {
+    usuario_id: string;
+    empresa_id: string;
+    rol: string;
+  }): Promise<string> {
+    const empresa = await this.empresaRepo.findOne({ where: { id: claims.empresa_id } });
+    return this.generateAccessToken({
+      usuario_id: claims.usuario_id,
+      empresa_id: claims.empresa_id,
+      rnc: empresa?.rnc ?? '',
+      rol: claims.rol,
+    });
   }
 
   private async createRefreshToken(

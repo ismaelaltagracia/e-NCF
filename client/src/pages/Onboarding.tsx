@@ -396,6 +396,9 @@ function RegistroStep({ onSuccess }: { onSuccess: (token: string) => void }) {
 
       <div className="onboarding-footer">
         <p>¿Ya tienes cuenta? <Link to="/login">Iniciar Sesión</Link></p>
+        <p style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: '#6b7280' }}>
+          <Link to="/registro-contador" style={{ color: '#1a3a5c', fontWeight: 500 }}>¿Eres contador? Regístrate aquí</Link>
+        </p>
       </div>
     </>
   );
