@@ -46,9 +46,9 @@
 Agrega a tu `.env`:
 ```env
 # Stripe
-STRIPE_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxxxxx
-STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxx
-STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxx
+STRIPE_SECRET_KEY=sk_test_TU_SECRET_KEY_AQUI
+STRIPE_PUBLISHABLE_KEY=pk_test_TU_PUBLISHABLE_KEY_AQUI
+STRIPE_WEBHOOK_SECRET=whsec_TU_WEBHOOK_SECRET_AQUI
 ```
 
 ### Instalar dependencia
@@ -277,7 +277,7 @@ if (empresa.pago_automatico && empresa.stripe_payment_method_id) {
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-const stripePromise = loadStripe('pk_test_...');
+const stripePromise = loadStripe('pk_test_TU_KEY');
 
 function PagoForm() {
   const stripe = useStripe();

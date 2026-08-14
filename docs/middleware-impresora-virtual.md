@@ -98,7 +98,7 @@ e-ncf-print-bridge/
 {
   "api": {
     "base_url": "https://api.tudominio.com",
-    "api_key": "sk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    "api_key": "TU_API_KEY_AQUI"
   },
   "impresora_virtual": {
     "nombre": "e-NCF Print Bridge",
