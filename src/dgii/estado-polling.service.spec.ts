@@ -103,7 +103,7 @@ describe('EstadoPollingService', () => {
 
       await service.pollEstados();
 
-      expect(tokenService.obtenerToken).toHaveBeenCalledWith('empresa-1');
+      expect(tokenService.obtenerToken).toHaveBeenCalledWith('empresa-1', undefined);
       expect(circuitBreaker.execute).toHaveBeenCalled();
     });
 

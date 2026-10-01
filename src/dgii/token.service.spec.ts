@@ -27,15 +27,9 @@ describe('DgiiTokenService', () => {
   const MOCK_TOKEN = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.mock-token';
   const MOCK_EMPRESA_ID = 'empresa-uuid-001';
 
+  // La DGII responde con JSON { token, expira, ... } al validar la semilla firmada.
   const buildTokenResponse = (token: string) =>
-    `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-  <soap:Body>
-    <AutenticacionResult xmlns="urn:dgii.gov.do:ecf:remision:2019">
-      <token>${token}</token>
-    </AutenticacionResult>
-  </soap:Body>
-</soap:Envelope>`;
+    JSON.stringify({ token, expira: '2026-01-15T11:00:00', expedido: '2026-01-15T10:00:00' });
 
   beforeEach(async () => {
     semillaService = {
@@ -103,9 +97,7 @@ describe('DgiiTokenService', () => {
         'https://ecf.dgii.gov.do/token',
         expect.objectContaining({
           method: 'POST',
-          headers: expect.objectContaining({
-            'Content-Type': 'text/xml; charset=utf-8',
-          }),
+          body: expect.any(FormData),
         }),
       );
     });

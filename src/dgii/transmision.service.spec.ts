@@ -73,7 +73,7 @@ describe('TransmisionService', () => {
           provide: ConfigService,
           useValue: {
             get: (key: string, defaultValue: string) => {
-              if (key === 'DGII_ECF_URL') return 'https://ecf.dgii.gov.do/CerteCF/EmisionCF';
+              if (key === 'DGII_ECF_URL') return 'https://ecf.dgii.gov.do/certecf/recepcion/api/facturaselectronicas';
               return defaultValue;
             },
           },
@@ -108,16 +108,15 @@ describe('TransmisionService', () => {
 
       await service.transmitir(MOCK_PARAMS);
 
-      expect(tokenService.obtenerToken).toHaveBeenCalledWith(MOCK_PARAMS.empresa_id);
+      expect(tokenService.obtenerToken).toHaveBeenCalledWith(MOCK_PARAMS.empresa_id, undefined);
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://ecf.dgii.gov.do/CerteCF/EmisionCF',
+        'https://ecf.dgii.gov.do/certecf/recepcion/api/facturaselectronicas',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
             Authorization: `Bearer ${MOCK_TOKEN}`,
-            'Content-Type': 'application/xml',
           }),
-          body: MOCK_PARAMS.xml_firmado,
+          body: expect.any(FormData),
           signal: expect.any(AbortSignal),
         }),
       );
@@ -256,7 +255,7 @@ describe('TransmisionService', () => {
             provide: ConfigService,
             useValue: {
               get: (key: string, defaultValue: string) => {
-                if (key === 'DGII_ECF_URL') return 'https://ecf.dgii.gov.do/CerteCF/EmisionCF';
+                if (key === 'DGII_ECF_URL') return 'https://ecf.dgii.gov.do/certecf/recepcion/api/facturaselectronicas';
                 return defaultValue;
               },
             },

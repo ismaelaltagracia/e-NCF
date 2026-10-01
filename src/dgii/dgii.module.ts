@@ -14,6 +14,7 @@ import { RecepcionController } from './recepcion.controller.js';
 import { DgiiStatusController } from './dgii-status.controller.js';
 import { EstadoPollingService } from './estado-polling.service.js';
 import { AnulacionService } from './anulacion.service.js';
+import { AprobacionComercialService } from './aprobacion-comercial.service.js';
 import { Empresa } from '../database/entities/empresa.entity.js';
 import { FacturaElectronica } from '../database/entities/factura-electronica.entity.js';
 import { RncContribuyente } from '../database/entities/rnc-contribuyente.entity.js';
@@ -50,6 +51,7 @@ import { WebhooksModule } from '../modules/webhooks/webhooks.module.js';
     RncValidatorService,
     EstadoPollingService,
     AnulacionService,
+    AprobacionComercialService,
   ],
   exports: [
     SemillaService,
@@ -61,6 +63,7 @@ import { WebhooksModule } from '../modules/webhooks/webhooks.module.js';
     RncValidatorService,
     EstadoPollingService,
     AnulacionService,
+    AprobacionComercialService,
   ],
 })
 export class DgiiModule {}

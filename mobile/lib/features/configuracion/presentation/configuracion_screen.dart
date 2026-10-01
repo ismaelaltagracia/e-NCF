@@ -205,6 +205,21 @@ class _SecuenciasScreenState extends State<_SecuenciasScreen> {
     setState(() => _loading = false);
   }
 
+  String _tipoDescripcion(String tipo) {
+    switch (tipo) {
+      case 'E31': return 'Factura de Crédito Fiscal';
+      case 'E32': return 'Factura de Consumo';
+      case 'E33': return 'Nota de Débito';
+      case 'E34': return 'Nota de Crédito';
+      case 'E41': return 'Compras';
+      case 'E43': return 'Gastos Menores';
+      case 'E44': return 'Regímenes Especiales';
+      case 'E45': return 'Gubernamental';
+      case 'E46': return 'Exportaciones';
+      default: return tipo;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -216,22 +231,23 @@ class _SecuenciasScreenState extends State<_SecuenciasScreen> {
               itemCount: _secuencias.length,
               itemBuilder: (ctx, i) {
                 final s = _secuencias[i];
-                final actual = s['numero_actual'] ?? 0;
-                final fin = s['numero_fin'] ?? 1;
-                final progress = actual / fin;
+                final tipoDesc = _tipoDescripcion(s['tipo_comprobante'] ?? '');
+                final actual = (s['numero_actual'] is num) ? (s['numero_actual'] as num).toDouble() : 0.0;
+                final fin = (s['numero_fin'] is num) ? (s['numero_fin'] as num).toDouble() : 1.0;
+                final progress = fin > 0 ? (actual / fin).clamp(0.0, 1.0) : 0.0;
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    title: Text(s['tipo_comprobante'] ?? '',
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    title: Text(tipoDesc,
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Prefijo: ${s['prefijo']} | Actual: $actual / $fin',
-                            style: const TextStyle(fontSize: 12)),
+                        Text('${s['tipo_comprobante']} | Prefijo: ${s['prefijo']} | Actual: ${actual.toInt()} / ${fin.toInt()}',
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                         const SizedBox(height: 4),
                         LinearProgressIndicator(
-                          value: progress.clamp(0.0, 1.0),
+                          value: progress,
                           backgroundColor: AppColors.border,
                         ),
                       ],

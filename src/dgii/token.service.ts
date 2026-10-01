@@ -26,39 +26,30 @@ export interface IDgiiTokenService {
 }
 
 /**
- * Construye el envelope SOAP para enviar la semilla firmada al endpoint de autenticación.
+ * Extrae el token de la respuesta del endpoint de autenticación de la DGII.
+ * La DGII responde con JSON: { token: "...", expira: "...", expedido: "..." }.
+ * Como respaldo, si la respuesta viniera como XML, se intenta por regex.
  */
-function buildTokenSoapEnvelope(semillaFirmadaXml: string): string {
-  return `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-  <soap:Body>
-    <AutenticacionInput xmlns="urn:dgii.gov.do:ecf:remision:2019">
-      ${semillaFirmadaXml}
-    </AutenticacionInput>
-  </soap:Body>
-</soap:Envelope>`;
-}
+function extractTokenFromResponse(responseBody: string): string | null {
+  // Intentar JSON primero (formato REST oficial de la DGII)
+  try {
+    const parsed = JSON.parse(responseBody) as Record<string, unknown>;
+    const token =
+      (parsed['token'] as string) ??
+      (parsed['Token'] as string) ??
+      (parsed['access_token'] as string);
+    if (token) {
+      return String(token).trim();
+    }
+  } catch {
+    // No era JSON: continuar con el respaldo XML
+  }
 
-/**
- * Extrae el token de la respuesta SOAP del endpoint de autenticación DGII.
- * Busca el contenido dentro del elemento de respuesta de autenticación.
- */
-function extractTokenFromResponse(responseXml: string): string | null {
-  // Buscar el token en la respuesta SOAP
-  // Patrones comunes: <token>...</token> o <Token>...</Token>
-  const tokenMatch = responseXml.match(
+  const tokenMatch = responseBody.match(
     /<(?:[a-zA-Z_][\w.-]*:)?[Tt]oken[^>]*>([\s\S]*?)<\/(?:[a-zA-Z_][\w.-]*:)?[Tt]oken>/,
   );
   if (tokenMatch && tokenMatch[1]) {
     return tokenMatch[1].trim();
-  }
-
-  // Alternativa: buscar en AutenticacionResult
-  const resultMatch = responseXml.match(
-    /<(?:[a-zA-Z_][\w.-]*:)?AutenticacionResult[^>]*>([\s\S]*?)<\/(?:[a-zA-Z_][\w.-]*:)?AutenticacionResult>/,
-  );
-  if (resultMatch && resultMatch[1]) {
-    return resultMatch[1].trim();
   }
 
   return null;
@@ -89,16 +80,17 @@ export class DgiiTokenService implements IDgiiTokenService {
   ) {
     this.tokenUrl = this.configService.get<string>(
       'DGII_TOKEN_URL',
-      'https://ecf.dgii.gov.do/CerteCF/WSCertificacion.asmx',
+      'https://ecf.dgii.gov.do/CerteCF/autenticacion/api/Autenticacion/ValidarSemilla',
     );
   }
 
   /**
    * Returns the DGII token URL based on the ambiente.
+   * En producción se usa el segmento de ruta "eCF" en lugar de "CerteCF".
    */
   private getDgiiTokenUrl(ambiente?: string): string {
     if (ambiente === 'produccion') {
-      return 'https://ecf.dgii.gov.do/ECF/WSCertificacion.asmx';
+      return this.tokenUrl.replace('/CerteCF/', '/eCF/');
     }
     return this.tokenUrl;
   }
@@ -224,8 +216,13 @@ export class DgiiTokenService implements IDgiiTokenService {
     correlationId: string,
     ambiente?: string,
   ): Promise<string> {
-    const soapEnvelope = buildTokenSoapEnvelope(semillaFirmadaXml);
     const tokenUrl = this.getDgiiTokenUrl(ambiente);
+
+    // La DGII espera la semilla firmada como multipart/form-data en el campo "xml"
+    // (un archivo XML), no como cuerpo XML plano ni SOAP.
+    const formData = new FormData();
+    const blob = new Blob([semillaFirmadaXml], { type: 'application/xml' });
+    formData.append('xml', blob, 'signed.xml');
 
     let response: Response;
     try {
@@ -235,10 +232,10 @@ export class DgiiTokenService implements IDgiiTokenService {
       response = await fetch(tokenUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'text/xml; charset=utf-8',
-          SOAPAction: '"urn:dgii.gov.do:ecf:remision:2019/GetToken"',
+          Accept: 'application/json',
+          // No fijar Content-Type manualmente: fetch añade el boundary del multipart.
         },
-        body: soapEnvelope,
+        body: formData,
         signal: controller.signal,
       });
 

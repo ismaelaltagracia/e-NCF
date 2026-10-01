@@ -1,0 +1,79 @@
+# ───────────────────────────────────────────────────────────────────────────
+# Override de PRODUCCIÓN para el servidor Debian.
+#
+# Uso en el servidor:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Qué cambia respecto al compose base:
+#   1. Persistencia con BIND MOUNTS a /opt/e-ncf-data (explícito, fácil de respaldar,
+#      NO se borra con `docker compose down -v`).
+#   2. Postgres/Redis/MinIO NO se exponen a internet (sin "ports"): solo accesibles
+#      por la red interna de Docker. El backend sí (lo publica Nginx).
+#   3. Límites de recursos y rotación de logs para estabilidad en el servidor.
+#
+# Crea los directorios en el servidor antes del primer arranque:
+#   sudo mkdir -p /opt/e-ncf-data/{postgres,redis,minio,backups}
+# ───────────────────────────────────────────────────────────────────────────
+
+services:
+  app:
+    restart: always
+    # El backend se publica solo en localhost; Nginx hace el proxy a 443.
+    ports:
+      - "127.0.0.1:${PORT:-3000}:3000"
+    volumes:
+      # Mismo bind mount de backups (solo lectura) + las llaves JWT/certs.
+      - /opt/e-ncf-data/backups:/backups:ro
+      - ./keys:/app/keys:ro
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  postgres:
+    restart: always
+    # !override reemplaza por completo la lista de puertos del compose base
+    # (no la fusiona). Resultado: Postgres solo accesible en la red interna de Docker.
+    ports: !override []
+    volumes:
+      - /opt/e-ncf-data/postgres:/var/lib/postgresql/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  redis:
+    restart: always
+    ports: !override []
+    volumes:
+      - /opt/e-ncf-data/redis:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  minio:
+    restart: always
+    # MinIO solo accesible internamente; la consola (9001) no se expone.
+    ports: !override []
+    volumes:
+      - /opt/e-ncf-data/minio:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backup:
+    restart: always
+    volumes:
+      - /opt/e-ncf-data/backups:/backups
+      - ./scripts/backup.sh:/scripts/backup.sh:ro
+      - ./scripts/backup-entrypoint.sh:/scripts/backup-entrypoint.sh:ro

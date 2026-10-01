@@ -17,9 +17,18 @@ interface MiPlanData {
   plan: Plan | null;
 }
 
+interface UsoActual {
+  plan_nombre: string;
+  limite_mensual: number | null;
+  facturas_generadas: number;
+  restante: number | null;
+  precio: string;
+}
+
 function MiPlan() {
   const { authFetch, userRole } = useAuth();
   const [miPlan, setMiPlan] = useState<MiPlanData | null>(null);
+  const [uso, setUso] = useState<UsoActual | null>(null);
   const [planes, setPlanes] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,6 +46,17 @@ function MiPlan() {
     }
   };
 
+  const fetchUso = async () => {
+    try {
+      const res = await authFetch('/api/v1/empresas/me/uso');
+      if (!res.ok) return; // no bloquea la vista si falla
+      const data = await res.json();
+      setUso(data);
+    } catch {
+      // Ignorar: el consumo es información complementaria
+    }
+  };
+
   const fetchPlanes = async () => {
     try {
       const res = await fetch('/api/v1/planes');
@@ -49,7 +69,7 @@ function MiPlan() {
   };
 
   useEffect(() => {
-    Promise.all([fetchMiPlan(), fetchPlanes()]).finally(() => setLoading(false));
+    Promise.all([fetchMiPlan(), fetchPlanes(), fetchUso()]).finally(() => setLoading(false));
   }, []);
 
   const handleCambiarPlan = async (plan: Plan) => {
@@ -99,7 +119,7 @@ function MiPlan() {
       });
 
       // Reload current plan info
-      await fetchMiPlan();
+      await Promise.all([fetchMiPlan(), fetchUso()]);
     } catch (err: unknown) {
       Swal.fire({
         icon: 'error',
@@ -142,6 +162,39 @@ function MiPlan() {
                   : `📋 Hasta ${miPlan.plan.limite_facturas_mensual} facturas/mes`}
               </span>
             </div>
+
+            {uso && (
+              <div className="miplan-uso">
+                {uso.limite_mensual === null ? (
+                  <p className="miplan-uso-texto">
+                    Ha emitido <strong>{uso.facturas_generadas}</strong> facturas este mes ·{' '}
+                    <span className="miplan-uso-ilimitado">Emisión ilimitada</span>
+                  </p>
+                ) : (
+                  <>
+                    <p className="miplan-uso-texto">
+                      Facturas emitidas este mes: <strong>{uso.facturas_generadas}</strong> de{' '}
+                      <strong>{uso.limite_mensual}</strong> ·{' '}
+                      <span className="miplan-uso-restante">
+                        {uso.restante} disponibles
+                      </span>
+                    </p>
+                    <div className="miplan-uso-barra">
+                      <div
+                        className="miplan-uso-barra-fill"
+                        style={{
+                          width: `${Math.min(100, (uso.facturas_generadas / uso.limite_mensual) * 100)}%`,
+                          background:
+                            uso.restante !== null && uso.restante <= uso.limite_mensual * 0.1
+                              ? '#d93025'
+                              : '#1a73e8',
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           <div className="miplan-current-price">
             RD${Number(miPlan.plan.precio).toLocaleString('es-DO', { minimumFractionDigits: 2 })}

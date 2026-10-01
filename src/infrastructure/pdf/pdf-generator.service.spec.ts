@@ -109,11 +109,13 @@ describe('PdfGeneratorService', () => {
       await service.generarFacturaPdf(mockFactura as FacturaElectronica, 'carta');
 
       expect(mockQrGenerator.generar).toHaveBeenCalledWith({
-        url_dgii: 'https://dgii.gov.do/app/WebApps/ConsultaNCF/ConsultaNCF',
+        url_dgii: 'https://ecf.dgii.gov.do/certecf/consultatimbre',
         rnc_emisor: '130000001',
         rnc_receptor: '101000001',
         encf: 'E310000000001',
+        fecha_emision: '',
         monto_total: '1500.00',
+        codigo_seguridad: '',
       });
     });
 

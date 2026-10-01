@@ -26,7 +26,15 @@ class _EncfAppState extends State<EncfApp> {
   @override
   void initState() {
     super.initState();
+    _apiClient.onUnauthorized = _handleUnauthorized;
     _checkAuth();
+  }
+
+  void _handleUnauthorized() {
+    setState(() {
+      _authenticated = false;
+      _currentTab = 0;
+    });
   }
 
   Future<void> _checkAuth() async {
@@ -52,7 +60,7 @@ class _EncfAppState extends State<EncfApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'e-NCF',
+      title: 'E-MITTE',
       theme: AppTheme.light,
       debugShowCheckedModeBanner: false,
       home: _checking
@@ -101,7 +109,7 @@ class _EncfAppState extends State<EncfApp> {
       case 2: return 'Recibidas';
       case 3: return 'Reportes';
       case 4: return 'Configuración';
-      default: return 'e-NCF';
+      default: return 'E-MITTE';
     }
   }
 }

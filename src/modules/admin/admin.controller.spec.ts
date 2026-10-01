@@ -1,9 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
 import { PlanesService } from '../planes/planes.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SuperAdminGuard } from '../../common/guards/super-admin.guard';
+import { Empresa } from '../../database/entities/empresa.entity';
+import { SecuenciaNcf } from '../../database/entities/secuencia-ncf.entity';
 
 describe('AdminController', () => {
   let controller: AdminController;
@@ -22,6 +25,8 @@ describe('AdminController', () => {
       controllers: [AdminController],
       providers: [
         { provide: PlanesService, useValue: mockPlanesService },
+        { provide: getRepositoryToken(Empresa), useValue: { find: jest.fn(), findOne: jest.fn(), save: jest.fn() } },
+        { provide: getRepositoryToken(SecuenciaNcf), useValue: { find: jest.fn(), findOne: jest.fn(), save: jest.fn() } },
       ],
     })
       .overrideGuard(JwtAuthGuard)

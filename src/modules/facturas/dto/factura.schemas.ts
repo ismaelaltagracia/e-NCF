@@ -106,7 +106,7 @@ export const CreateFacturaSchema = z
 
     tipo_comprobante: z.nativeEnum(TipoComprobante, {
       message:
-        'tipo_comprobante debe ser un tipo válido (E31, E32, E33, E34, E41, E43, E44, E45, E46)',
+        'tipo_comprobante debe ser un tipo válido (E31, E32, E33, E34, E41, E43, E44, E45, E46, E47)',
     }).optional(),
 
     e_ncf: z

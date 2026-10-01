@@ -82,7 +82,7 @@ function Dashboard() {
       <div className="dashboard-greeting">
         <div className="greeting-text">
           <h1>Bienvenido</h1>
-          <p>Resumen de tu cuenta e-NCF</p>
+          <p>Resumen de tu cuenta E-MITTE</p>
         </div>
         <div className="quick-actions">
           <button className="quick-action-btn" onClick={() => navigate('/facturas/nueva')}>

@@ -70,7 +70,7 @@ function Login() {
       <div className="login-branding">
         <div className="branding-content">
           <div className="branding-logo">
-            e-<span>NCF</span>
+            E-<span>MITTE</span>
           </div>
           <p className="branding-tagline">
             Facturación electrónica para la República Dominicana, simple y confiable.

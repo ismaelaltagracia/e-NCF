@@ -168,7 +168,7 @@ function Layout() {
       <aside className="sidebar" aria-label="Navegación principal">
         <div className="sidebar-top">
           <div className="sidebar-logo">
-            <span className="logo-text">e-<span className="logo-highlight">NCF</span></span>
+            <span className="logo-text">E-<span className="logo-highlight">MITTE</span></span>
             {!collapsed && isSuperAdmin && <span className="logo-badge">Admin</span>}
           </div>
           <button

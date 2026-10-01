@@ -30,6 +30,11 @@ export interface TransmisionParams {
   xml_firmado: string;
   correlation_id: string;
   ambiente?: string;
+  /**
+   * Nombre del archivo XML para el multipart, con convención RNC+eNCF.xml
+   * (ej: "101672919E310000000001.xml"). Si no se provee, se usa un nombre genérico.
+   */
+  nombre_archivo?: string;
 }
 
 /**
@@ -81,16 +86,17 @@ export class TransmisionService {
   ) {
     this.dgiiEcfUrl = this.configService.get<string>(
       'DGII_ECF_URL',
-      'https://ecf.dgii.gov.do/CerteCF/EmisionCF',
+      'https://ecf.dgii.gov.do/CerteCF/recepcion/api/FacturasElectronicas',
     );
   }
 
   /**
    * Returns the DGII e-CF URL based on the ambiente.
+   * En producción se usa el segmento de ruta "eCF" en lugar de "CerteCF".
    */
   private getDgiiEcfUrl(ambiente?: string): string {
     if (ambiente === 'produccion') {
-      return 'https://ecf.dgii.gov.do/ECF/EmisionCF';
+      return this.dgiiEcfUrl.replace('/CerteCF/', '/eCF/');
     }
     return this.dgiiEcfUrl;
   }
@@ -117,6 +123,59 @@ export class TransmisionService {
   }
 
   /**
+   * Transmite un e-CF firmado a la DGII para un reintento en cola (BullMQ).
+   *
+   * A diferencia de `transmitir()`, este método NO vuelve a encolar ante errores
+   * transitorios ni gestiona su propio circuit breaker: se asume que el worker de
+   * la cola (RetryQueueProcessor) ya envuelve la llamada en el circuit breaker y
+   * gestiona los reintentos. Aquí solo obtenemos el token, llamamos al endpoint y
+   * traducimos el resultado:
+   *  - éxito → devuelve { estado: 'aceptado', track_id }
+   *  - rechazo de negocio (4xx != 401) → devuelve { estado: 'rechazado', error_dgii }
+   *  - 401 → invalida token y reintenta una vez; si persiste, lanza TransientError
+   *  - error transitorio (5xx/red/timeout) → lanza TransientError (para que la cola reintente)
+   *
+   * @see Requisito 11.x / 19.x
+   */
+  async transmitirDirecto(params: TransmisionParams): Promise<TransmisionResult> {
+    const correlationId = params.correlation_id || getCorrelationId() || 'no-correlation';
+
+    const ejecutar = async (): Promise<TransmisionResult> => {
+      const token = await this.tokenService.obtenerToken(params.empresa_id, params.ambiente);
+      return this.llamarEndpointDgii(
+        params.xml_firmado,
+        token,
+        correlationId,
+        params.ambiente,
+        params.nombre_archivo,
+      );
+    };
+
+    try {
+      return await ejecutar();
+    } catch (error: unknown) {
+      // Token expirado: invalidar cache, re-handshake y reintentar una vez
+      if (error instanceof TokenExpiredError) {
+        const cacheKey = `${REDIS_KEY_PREFIX}${params.empresa_id}`;
+        try {
+          await this.redis.del(cacheKey);
+        } catch (redisError: unknown) {
+          const message = redisError instanceof Error ? redisError.message : 'Unknown error';
+          this.logger.warn(`No se pudo invalidar token en Redis durante reintento: ${message}`);
+        }
+        try {
+          return await ejecutar();
+        } catch (retryError: unknown) {
+          // Si sigue expirando, tratarlo como transitorio para que la cola reintente luego
+          const message = retryError instanceof Error ? retryError.message : 'Unknown error';
+          throw new TransientError(`Re-handshake falló durante reintento: ${message}`);
+        }
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Ejecuta la transmisión al endpoint de la DGII via el CircuitBreaker.
    * Si isRetry es true, no intentará re-handshake ante un 401.
    */
@@ -128,7 +187,14 @@ export class TransmisionService {
     const token = await this.tokenService.obtenerToken(params.empresa_id, params.ambiente);
 
     const result = await this.circuitBreaker.execute(
-      () => this.llamarEndpointDgii(params.xml_firmado, token, correlationId, params.ambiente),
+      () =>
+        this.llamarEndpointDgii(
+          params.xml_firmado,
+          token,
+          correlationId,
+          params.ambiente,
+          params.nombre_archivo,
+        ),
       `transmision-ecf:${params.factura_id}`,
     );
 
@@ -146,21 +212,29 @@ export class TransmisionService {
     token: string,
     correlationId: string,
     ambiente?: string,
+    nombreArchivo?: string,
   ): Promise<TransmisionResult> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
     const ecfUrl = this.getDgiiEcfUrl(ambiente);
+
+    // La DGII espera el e-CF firmado como multipart/form-data en el campo "xml",
+    // con el archivo nombrado RNC+eNCF.xml.
+    const formData = new FormData();
+    const blob = new Blob([xmlFirmado], { type: 'application/xml' });
+    formData.append('xml', blob, nombreArchivo || 'ecf.xml');
 
     let response: Response;
     try {
       response = await fetch(ecfUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/xml',
+          // No fijar Content-Type: fetch añade el boundary del multipart.
+          Accept: 'application/json',
           Authorization: `Bearer ${token}`,
           'X-Correlation-Id': correlationId,
         },
-        body: xmlFirmado,
+        body: formData,
         signal: controller.signal,
       });
       clearTimeout(timeoutId);

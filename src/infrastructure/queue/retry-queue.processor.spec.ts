@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 
 import { RetryQueueProcessor } from './retry-queue.processor.js';
 import { CircuitBreakerService } from '../../dgii/circuit-breaker.service.js';
+import { TransmisionService } from '../../dgii/transmision.service.js';
 import { FacturaElectronica } from '../../database/entities/factura-electronica.entity.js';
 import { EstadoDgii } from '../../database/enums.js';
 import {
@@ -88,6 +89,12 @@ describe('RetryQueueProcessor', () => {
           },
         },
         {
+          provide: TransmisionService,
+          useValue: {
+            transmitirDirecto: jest.fn().mockResolvedValue({ track_id: null, estado: 'aceptado' }),
+          },
+        },
+        {
           provide: getRepositoryToken(FacturaElectronica),
           useValue: {
             update: jest.fn().mockResolvedValue({ affected: 1 }),
@@ -110,13 +117,13 @@ describe('RetryQueueProcessor', () => {
   describe('processTransmision', () => {
     it('should process a job successfully and update estado to ACEPTADO', async () => {
       circuitBreakerService.getState.mockReturnValue('CLOSED');
-      circuitBreakerService.execute.mockResolvedValue(undefined);
+      circuitBreakerService.execute.mockResolvedValue({ track_id: 'TRACK-1', estado: 'aceptado' });
 
       await workerProcessor!(mockJob);
 
       expect(facturaRepository.update).toHaveBeenCalledWith(
         { id: 'factura-uuid-123' },
-        { estado_dgii: EstadoDgii.ACEPTADO },
+        { estado_dgii: EstadoDgii.ACEPTADO, track_id: 'TRACK-1' },
       );
     });
 
@@ -158,7 +165,7 @@ describe('RetryQueueProcessor', () => {
 
     it('should allow processing when Circuit Breaker is HALF-OPEN', async () => {
       circuitBreakerService.getState.mockReturnValue('HALF-OPEN');
-      circuitBreakerService.execute.mockResolvedValue(undefined);
+      circuitBreakerService.execute.mockResolvedValue({ track_id: null, estado: 'aceptado' });
 
       await workerProcessor!(mockJob);
 
@@ -206,6 +213,12 @@ describe('RetryQueueProcessor', () => {
             useValue: {
               getState: jest.fn().mockReturnValue('OPEN'),
               execute: jest.fn(),
+            },
+          },
+          {
+            provide: TransmisionService,
+            useValue: {
+              transmitirDirecto: jest.fn().mockResolvedValue({ track_id: null, estado: 'aceptado' }),
             },
           },
           {

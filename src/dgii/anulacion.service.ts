@@ -63,7 +63,7 @@ export class AnulacionService {
   ) {
     this.dgiiAnulacionUrl = this.configService.get<string>(
       'DGII_ANULACION_URL',
-      'https://ecf.dgii.gov.do/CerteCF/AnulacionCF',
+      'https://ecf.dgii.gov.do/CerteCF/anulacionrangos/api/operaciones/anularrango',
     );
 
     this.xmlBuilder = new XMLBuilder({
@@ -156,19 +156,24 @@ export class AnulacionService {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
     const anulacionUrl = ambiente === 'produccion'
-      ? this.dgiiAnulacionUrl.replace('CerteCF', 'ECF')
+      ? this.dgiiAnulacionUrl.replace('/CerteCF/', '/eCF/')
       : this.dgiiAnulacionUrl;
+
+    // La DGII espera el XML firmado como multipart/form-data en el campo "xml".
+    const formData = new FormData();
+    const blob = new Blob([xmlFirmado], { type: 'application/xml' });
+    formData.append('xml', blob, 'anulacion.xml');
 
     let response: Response;
     try {
       response = await fetch(anulacionUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/xml',
+          Accept: 'application/json',
           Authorization: `Bearer ${token}`,
           'X-Correlation-Id': correlationId,
         },
-        body: xmlFirmado,
+        body: formData,
         signal: controller.signal,
       });
       clearTimeout(timeoutId);

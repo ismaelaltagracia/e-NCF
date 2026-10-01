@@ -305,6 +305,31 @@
   cursor: not-allowed;
 }
 
+.btn-skip {
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  background: transparent;
+  color: #475569;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.btn-skip:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.btn-skip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ─── Footer ─── */
 .onboarding-footer {
   margin-top: 1.5rem;

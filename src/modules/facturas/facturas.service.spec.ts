@@ -13,6 +13,8 @@ import { TransmisionService } from '../../dgii/transmision.service.js';
 import { RncValidatorService } from '../../dgii/rnc-validator.service.js';
 import { STORAGE_PROVIDER } from '../../infrastructure/storage/storage.interface.js';
 import { RETRY_QUEUE_SERVICE } from '../../infrastructure/queue/retry-queue.interfaces.js';
+import { PDF_GENERATOR } from '../../infrastructure/pdf/pdf-generator.interface.js';
+import { EMAIL_SERVICE } from '../../infrastructure/email/email.interface.js';
 import { EstadoDgii, ModoNcf, TipoComprobante } from '../../database/enums.js';
 import type { RequestContext } from '../../common/interfaces/request-context.interface.js';
 import type { CreateFacturaDto } from './dto/factura.schemas.js';
@@ -75,6 +77,9 @@ describe('FacturasService', () => {
 
   const mockConversorXmlService = {
     convertir: jest.fn(),
+    validarEstructuraXml: jest.fn().mockReturnValue({ valido: true, errores: [] }),
+    debeUsarResumen: jest.fn().mockReturnValue(false),
+    convertirResumen: jest.fn(),
   };
 
   const mockFirmaService = {
@@ -98,6 +103,16 @@ describe('FacturasService', () => {
     encolarTransmision: jest.fn(),
   };
 
+  const mockPdfGenerator = {
+    generarFacturaPdf: jest.fn(),
+    generarYSubirPdf: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockEmailService = {
+    enviarFacturaEmail: jest.fn().mockResolvedValue(undefined),
+    enviar: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -112,6 +127,8 @@ describe('FacturasService', () => {
         { provide: RncValidatorService, useValue: mockRncValidatorService },
         { provide: STORAGE_PROVIDER, useValue: mockStorageProvider },
         { provide: RETRY_QUEUE_SERVICE, useValue: mockRetryQueue },
+        { provide: PDF_GENERATOR, useValue: mockPdfGenerator },
+        { provide: EMAIL_SERVICE, useValue: mockEmailService },
       ],
     }).compile();
 
@@ -160,7 +177,11 @@ describe('FacturasService', () => {
       // Assert
       expect(mockEmpresaRepo.findOne).toHaveBeenCalledWith({ where: { id: 'empresa-uuid-1' } });
       expect(mockPlanesService.verificarLimite).toHaveBeenCalledWith('empresa-uuid-1');
-      expect(mockSecuenciasNcfService.asignarSiguiente).toHaveBeenCalledWith('empresa-uuid-1', TipoComprobante.E31);
+      expect(mockSecuenciasNcfService.asignarSiguiente).toHaveBeenCalledWith(
+        'empresa-uuid-1',
+        TipoComprobante.E31,
+        mockEmpresa.ambiente_dgii,
+      );
       expect(mockRncValidatorService.validarRncParaFactura).toHaveBeenCalledWith('987654321', mockEmpresa);
       expect(mockConversorXmlService.convertir).toHaveBeenCalled();
       expect(mockFirmaService.firmarEcf).toHaveBeenCalledWith('<ECF>...</ECF>', 'empresa-uuid-1');
@@ -170,12 +191,15 @@ describe('FacturasService', () => {
         expect.any(Buffer),
         'application/xml',
       );
-      expect(mockTransmisionService.transmitir).toHaveBeenCalledWith({
-        factura_id: 'factura-uuid-1',
-        empresa_id: 'empresa-uuid-1',
-        xml_firmado: '<ECF signed>...</ECF>',
-        correlation_id: 'corr-id-1',
-      });
+      expect(mockTransmisionService.transmitir).toHaveBeenCalledWith(
+        expect.objectContaining({
+          factura_id: 'factura-uuid-1',
+          empresa_id: 'empresa-uuid-1',
+          xml_firmado: '<ECF signed>...</ECF>',
+          correlation_id: 'corr-id-1',
+          nombre_archivo: '123456789E310000000001.xml',
+        }),
+      );
       expect(mockPlanesService.incrementarUso).toHaveBeenCalledWith('empresa-uuid-1');
       expect(result.id).toBe('factura-uuid-1');
       expect(result.estado_dgii).toBe(EstadoDgii.ACEPTADO);

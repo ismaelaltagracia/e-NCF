@@ -46,7 +46,7 @@ export class EstadoPollingService {
   ) {
     this.dgiiStatusUrl = this.configService.get<string>(
       'DGII_STATUS_ENDPOINT',
-      'https://ecf.dgii.gov.do/CerteCF/ConsultaEstado',
+      'https://ecf.dgii.gov.do/CerteCF/consultaresultado/api/Consultas/Estado',
     );
     this.pollingIntervalMs = this.configService.get<number>(
       'DGII_POLLING_INTERVAL_MS',
@@ -161,9 +161,9 @@ export class EstadoPollingService {
     ambiente?: string,
   ): Promise<DgiiStatusResponse | null> {
     const baseUrl = ambiente === 'produccion'
-      ? this.dgiiStatusUrl.replace('CerteCF', 'ECF')
+      ? this.dgiiStatusUrl.replace('/CerteCF/', '/eCF/')
       : this.dgiiStatusUrl;
-    const url = `${baseUrl}/${trackId}`;
+    const url = `${baseUrl}?trackId=${encodeURIComponent(trackId)}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
 

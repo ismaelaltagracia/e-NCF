@@ -71,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   // Logo
                   const Text(
-                    'e-NCF',
+                    'E-MITTE',
                     style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.w800,

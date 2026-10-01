@@ -11,6 +11,7 @@ import {
   CircuitBreakerOpenError,
 } from './retry-queue.interfaces.js';
 import { CircuitBreakerService } from '../../dgii/circuit-breaker.service.js';
+import { TransmisionService } from '../../dgii/transmision.service.js';
 import { FacturaElectronica } from '../../database/entities/factura-electronica.entity.js';
 import { EstadoDgii } from '../../database/enums.js';
 
@@ -34,6 +35,7 @@ export class RetryQueueProcessor implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly configService: ConfigService,
     private readonly circuitBreakerService: CircuitBreakerService,
+    private readonly transmisionService: TransmisionService,
     @InjectRepository(FacturaElectronica)
     private readonly facturaRepository: Repository<FacturaElectronica>,
   ) {}
@@ -117,20 +119,31 @@ export class RetryQueueProcessor implements OnModuleInit, OnModuleDestroy {
 
     // Ejecutar la transmisión a través del Circuit Breaker
     try {
-      await this.circuitBreakerService.execute(
+      const resultado = await this.circuitBreakerService.execute(
         () => this.transmitirADgii(job.data),
         `retry-transmision:${factura_id}`,
       );
 
-      // Éxito: actualizar estado a aceptado
-      // Nota: el track_id se extraerá del response en la implementación real
+      // La DGII puede aceptar o rechazar de negocio en una respuesta 2xx/4xx
+      if (resultado.estado === 'rechazado') {
+        throw new BusinessRejectionError(
+          'La DGII rechazó el comprobante',
+          422,
+          resultado.error_dgii ?? undefined,
+        );
+      }
+
+      // Éxito: actualizar estado a aceptado y persistir track_id
       await this.facturaRepository.update(
         { id: factura_id },
-        { estado_dgii: EstadoDgii.ACEPTADO },
+        {
+          estado_dgii: EstadoDgii.ACEPTADO,
+          ...(resultado.track_id ? { track_id: resultado.track_id } : {}),
+        },
       );
 
       this.logger.log(
-        `Transmisión exitosa: factura=${factura_id}, correlationId=${correlation_id}`,
+        `Transmisión exitosa: factura=${factura_id}, track_id=${resultado.track_id ?? 'N/A'}, correlationId=${correlation_id}`,
       );
     } catch (error: unknown) {
       if (error instanceof BusinessRejectionError) {
@@ -169,17 +182,22 @@ export class RetryQueueProcessor implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Placeholder para la transmisión real al endpoint de la DGII.
-   * Será reemplazado por la implementación del TransmisionService en la tarea 9.7.
+   * Transmite el e-CF firmado a la DGII a través del TransmisionService.
+   *
+   * Devuelve el resultado (aceptado/rechazado con track_id/error_dgii). Los errores
+   * transitorios (5xx, red, timeout, token) se propagan como excepción para que BullMQ
+   * reintente; los rechazos de negocio se devuelven como estado 'rechazado' y el llamador
+   * los convierte en BusinessRejectionError (no reintentable).
    *
    * @param job - Datos del trabajo de transmisión
    */
-  private async transmitirADgii(_job: TransmisionJob): Promise<void> {
-    // Este método será reemplazado por la inyección del TransmisionService
-    // cuando se implemente la tarea 9.7
-    throw new Error(
-      'TransmisionService no implementado. Este método será reemplazado por el servicio de transmisión real.',
-    );
+  private async transmitirADgii(job: TransmisionJob) {
+    return this.transmisionService.transmitirDirecto({
+      factura_id: job.factura_id,
+      empresa_id: job.empresa_id,
+      xml_firmado: job.xml_firmado,
+      correlation_id: job.correlation_id,
+    });
   }
 
   /**

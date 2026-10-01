@@ -7,6 +7,7 @@ import { AnulacionService } from '../../dgii/anulacion.service.js';
 import { AuditoriaService } from '../auditoria/auditoria.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
+import { DeviceValidationGuard } from '../../common/guards/device-validation.guard.js';
 import { EstadoDgii } from '../../database/enums.js';
 import type { RequestContext } from '../../common/interfaces/request-context.interface.js';
 import type { FacturaElectronica } from '../../database/entities/factura-electronica.entity.js';
@@ -71,6 +72,8 @@ describe('FacturasController - Anulación', () => {
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
       .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(DeviceValidationGuard)
       .useValue({ canActivate: () => true })
       .compile();
 

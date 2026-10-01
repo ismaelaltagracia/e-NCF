@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 
+import { ConfigService } from '@nestjs/config';
 import { EmpresasController } from './empresas.controller';
 import { EmpresasService } from './empresas.service';
 import { PlanesService } from '../planes/planes.service';
@@ -37,6 +38,10 @@ describe('EmpresasController - updateConfiguracion', () => {
         {
           provide: PlanesService,
           useValue: { getUsoActual: jest.fn() },
+        },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn((_k: string, def?: unknown) => def) },
         },
       ],
     })

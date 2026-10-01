@@ -39,24 +39,47 @@ describe('RateLimitGuard', () => {
     });
   });
 
-  describe('when Redis is unavailable', () => {
-    it('should allow the request gracefully', async () => {
-      mockRequest.user = {
-        tipo: 'usuario',
-        empresa_id: 'emp-1',
-        rnc: '123456789',
-        usuario_id: 'user-1',
-        rol: 'admin',
-      };
-
+  describe('when Redis is unavailable (degraded in-memory fallback)', () => {
+    const failingRedis = () => {
       mockRedis.pipeline.mockReturnValue({
         zremrangebyscore: jest.fn().mockReturnThis(),
         zcard: jest.fn().mockReturnThis(),
         exec: jest.fn().mockRejectedValue(new Error('Connection refused')),
       });
+    };
+
+    it('should still allow requests below the degraded limit', async () => {
+      mockRequest.user = {
+        tipo: 'usuario',
+        empresa_id: 'emp-1',
+        rnc: '123456789',
+        usuario_id: 'user-degraded-1',
+        rol: 'admin',
+      };
+      failingRedis();
 
       const result = await guard.canActivate(createMockContext());
       expect(result).toBe(true);
+    });
+
+    it('should block once the degraded in-memory limit (50 for user) is exceeded', async () => {
+      mockRequest.user = {
+        tipo: 'usuario',
+        empresa_id: 'emp-1',
+        rnc: '123456789',
+        usuario_id: 'user-degraded-2',
+        rol: 'admin',
+      };
+      failingRedis();
+
+      // El límite degradado para usuario es 100 * 0.5 = 50: las primeras 50 pasan.
+      for (let i = 0; i < 50; i++) {
+        await expect(guard.canActivate(createMockContext())).resolves.toBe(true);
+      }
+      // La 51.ª debe ser rechazada con 429.
+      await expect(guard.canActivate(createMockContext())).rejects.toMatchObject({
+        response: expect.objectContaining({ statusCode: 429 }),
+      });
     });
   });
 

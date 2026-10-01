@@ -29,6 +29,8 @@ coverage/
 
 # Keys and certificates
 keys/
+test-certs/
+test-cert*/
 *.pem
 *.p12
 *.pfx

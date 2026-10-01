@@ -178,6 +178,8 @@ describe('UsersService', () => {
         email: 'test@empresa.com',
         rol: RolUsuario.ADMIN,
         activo: true,
+        created_by_user_id: null,
+        created_at: expect.any(Date),
       });
       expect(usuarioRepo.find).toHaveBeenCalledWith({
         where: { empresa_id: EMPRESA_ID },

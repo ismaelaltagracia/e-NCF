@@ -17,16 +17,19 @@ function Landing() {
   useEffect(() => {
     fetch('/api/v1/planes')
       .then((r) => (r.ok ? r.json() : []))
-      .then((data) => setPlanes(data.filter((p: Plan) => p.activo && !p.permite_api)))
+      .then((data) => setPlanes(data.filter((p: Plan) => p.activo)))
       .catch(() => {});
   }, []);
+
+  const planesWeb = planes.filter((p) => !p.permite_api);
+  const planesApi = planes.filter((p) => p.permite_api);
 
   return (
     <div className="landing">
       {/* ─── Header ─── */}
       <header className="landing-header">
         <div className="landing-header-inner">
-          <div className="landing-logo">e-<span>NCF</span></div>
+          <div className="landing-logo">E-<span>MITTE</span></div>
           <nav className="landing-nav">
             <a href="#funciones">Funciones</a>
             <a href="#precios">Precios</a>
@@ -186,27 +189,88 @@ function Landing() {
           <h2>Precios simples, sin sorpresas</h2>
           <p className="pricing-sub">Sin costo por factura. Paga un monto fijo mensual según tu volumen.</p>
 
-          {planes.length > 0 && (
-            <div className="pricing-grid">
-              {planes.slice(0, 3).map((plan, idx) => (
-                <div key={plan.id} className={`pricing-card ${idx === 1 ? 'pricing-card--featured' : ''}`}>
-                  {idx === 1 && <span className="pricing-badge">Popular</span>}
-                  <h3>{plan.nombre}</h3>
-                  <div className="pricing-amount">
-                    <span className="pricing-currency">RD$</span>
-                    <span className="pricing-value">{Number(plan.precio).toLocaleString('es-DO')}</span>
-                    <span className="pricing-period">/mes</span>
+          {/* Facturación desde la plataforma web */}
+          {planesWeb.length > 0 && (
+            <div className="pricing-group">
+              <div className="pricing-group-header">
+                <h3 className="pricing-group-title">📋 Facturación en la plataforma</h3>
+                <p className="pricing-group-sub">Emite comprobantes electrónicos desde nuestra web o app móvil.</p>
+              </div>
+              <div className="pricing-grid">
+                {planesWeb.slice(0, 3).map((plan, idx) => (
+                  <div key={plan.id} className={`pricing-card ${idx === 1 ? 'pricing-card--featured' : ''}`}>
+                    {idx === 1 && <span className="pricing-badge">Popular</span>}
+                    <h3>{plan.nombre}</h3>
+                    <div className="pricing-amount">
+                      <span className="pricing-currency">RD$</span>
+                      <span className="pricing-value">{Number(plan.precio).toLocaleString('es-DO')}</span>
+                      <span className="pricing-period">/mes</span>
+                    </div>
+                    <p className="pricing-limit">
+                      {plan.limite_facturas_mensual === null
+                        ? 'Facturas ilimitadas'
+                        : `Hasta ${plan.limite_facturas_mensual} facturas/mes`}
+                    </p>
+                    <ul className="pricing-api-features">
+                      <li>✓ Firma digital XAdES-BES</li>
+                      <li>✓ PDF con código QR</li>
+                      <li>✓ Almacenamiento XML/PDF</li>
+                      <li>✓ Validación RNC automática</li>
+                      {idx >= 1 && <li>✓ Soporte prioritario</li>}
+                      {idx === 2 && <li>✓ Usuarios ilimitados</li>}
+                    </ul>
+                    <Link to="/registro" className={`pricing-btn ${idx === 1 ? 'pricing-btn--primary' : ''}`}>
+                      Empezar ahora
+                    </Link>
                   </div>
-                  <p className="pricing-limit">
-                    {plan.limite_facturas_mensual === null
-                      ? 'Facturas ilimitadas'
-                      : `Hasta ${plan.limite_facturas_mensual} facturas/mes`}
-                  </p>
-                  <Link to="/registro" className={`pricing-btn ${idx === 1 ? 'pricing-btn--primary' : ''}`}>
-                    Empezar ahora
-                  </Link>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Facturación por integración API */}
+          {planesApi.length > 0 && (
+            <div className="pricing-group">
+              <div className="pricing-group-header">
+                <h3 className="pricing-group-title">🔗 Integración por API</h3>
+                <p className="pricing-group-sub">
+                  Conecta tu ERP, POS o sistema contable con nuestra API REST dedicada y emite
+                  facturas directamente desde tu software.
+                </p>
+              </div>
+              <div className="pricing-grid">
+                {planesApi.slice(0, 3).map((plan, idx) => (
+                  <div key={plan.id} className={`pricing-card pricing-card--api ${idx === 1 ? 'pricing-card--featured' : ''}`}>
+                    {idx === 1 && <span className="pricing-badge">Recomendado</span>}
+                    <h3>{plan.nombre}</h3>
+                    <div className="pricing-amount">
+                      <span className="pricing-currency">RD$</span>
+                      <span className="pricing-value">{Number(plan.precio).toLocaleString('es-DO')}</span>
+                      <span className="pricing-period">/mes</span>
+                    </div>
+                    <p className="pricing-limit">
+                      {plan.limite_facturas_mensual === null
+                        ? 'Facturas ilimitadas'
+                        : `Hasta ${plan.limite_facturas_mensual} facturas/mes`}
+                    </p>
+                    <ul className="pricing-api-features">
+                      <li>✓ API REST dedicada</li>
+                      <li>✓ API Keys con scopes</li>
+                      <li>✓ Documentación Swagger</li>
+                      <li>✓ Certificación DGII guiada</li>
+                      <li>✓ Circuit breaker + reintentos</li>
+                      {idx >= 1 && <li>✓ Soporte técnico dedicado</li>}
+                      {idx === 2 && <li>✓ Rate limit 1000 req/min</li>}
+                    </ul>
+                    <Link to="/registro" className={`pricing-btn ${idx === 1 ? 'pricing-btn--primary' : ''}`}>
+                      Empezar ahora
+                    </Link>
+                  </div>
+                ))}
+              </div>
+              <p className="pricing-api-note">
+                ¿Eres desarrollador? Revisa la <Link to="/documentacion">documentación de la API</Link> antes de integrar.
+              </p>
             </div>
           )}
         </div>
@@ -304,7 +368,7 @@ function Landing() {
       {/* ─── Footer ─── */}
       <footer className="landing-footer">
         <div className="footer-inner">
-          <div className="footer-brand">e-<span>NCF</span></div>
+          <div className="footer-brand">E-<span>MITTE</span></div>
           <p>Facturación electrónica para la República Dominicana.</p>
           <div className="footer-links">
             <Link to="/planes">Planes</Link>

@@ -35,6 +35,9 @@ COPY --from=deps /prod_node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=client-builder /app/client/dist ./client/dist
 COPY --from=builder /app/package.json ./package.json
+# Esquemas XSD de la DGII (validación de e-CF). Si el directorio no tiene el XSD
+# oficial, el servicio arranca con validación estructural por reglas.
+COPY xsd/ ./xsd/
 
 USER nestjs
 

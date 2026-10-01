@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
+import 'dart:ui' show VoidCallback;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/api_endpoints.dart';
 
 class ApiClient {
   late final Dio dio;
   final _storage = const FlutterSecureStorage();
+  VoidCallback? onUnauthorized;
 
   ApiClient() {
     dio = Dio(BaseOptions(
@@ -25,7 +27,7 @@ class ApiClient {
       onError: (error, handler) async {
         if (error.response?.statusCode == 401) {
           await _storage.deleteAll();
-          // Navigation to login will be handled by auth state
+          onUnauthorized?.call();
         }
         handler.next(error);
       },

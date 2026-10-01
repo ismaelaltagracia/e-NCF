@@ -74,7 +74,7 @@ describe('AnulacionService', () => {
         expect.stringContaining('AnulacioneCF'),
         'empresa-uuid-1',
       );
-      expect(mockTokenService.obtenerToken).toHaveBeenCalledWith('empresa-uuid-1');
+      expect(mockTokenService.obtenerToken).toHaveBeenCalledWith('empresa-uuid-1', undefined);
       expect(mockCircuitBreaker.execute).toHaveBeenCalledWith(
         expect.any(Function),
         'anulacion-ecf:factura-uuid-1',

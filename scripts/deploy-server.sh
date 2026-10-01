@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# e-NCF — Script de despliegue en servidor Ubuntu con Docker
+# e-NCF — Script de despliegue en servidor Debian/Ubuntu con Docker
 #
 # Uso:
 #   1. Edita las variables de abajo con tu dominio e IP
@@ -8,8 +8,8 @@
 #   3. Ejecuta en el servidor: bash /root/deploy-server.sh
 #
 # Requisitos:
-#   - Ubuntu 22.04 o superior
-#   - Acceso root
+#   - Debian 11/12 o Ubuntu 22.04+ (usa apt)
+#   - Acceso root (o sudo)
 #   - Dominio apuntando al IP del servidor (DNS configurado)
 #
 
@@ -93,7 +93,8 @@ DB_PASS=$(openssl rand -hex 24)
 REDIS_PASS=$(openssl rand -hex 16)
 MINIO_KEY=$(openssl rand -hex 16)
 MINIO_SECRET=$(openssl rand -hex 24)
-ENCRYPT_KEY=$(openssl rand -base64 32)
+# ENCRYPTION_KEY debe ser hex de 32 bytes (64 chars) — lo valida el arranque del backend.
+ENCRYPT_KEY=$(openssl rand -hex 32)
 
 # Generar JWT keys si no existen
 mkdir -p keys
@@ -141,14 +142,19 @@ JWT_EXPIRES_IN=15m
 # Encryption
 ENCRYPTION_KEY=$ENCRYPT_KEY
 
-# DGII
+# DGII (REST e-CF — ambiente producción, segmento de ruta eCF)
 DGII_AMBIENTE=produccion
-DGII_SEMILLA_URL=https://ecf.dgii.gov.do/ECF/WSCertificacion/CertECF.asmx
-DGII_TOKEN_URL=https://ecf.dgii.gov.do/ECF/WSCertificacion/CertECF.asmx
-DGII_ECF_URL=https://ecf.dgii.gov.do/ECF/EmisionCF
-DGII_ESTADO_URL=https://ecf.dgii.gov.do/ECF/ConsultaEstado
-DGII_STATUS_ENDPOINT=https://ecf.dgii.gov.do/ECF/ConsultaEstado
-DGII_RNC_URL=https://dgii.gov.do/app/WebApps/ConsultasWeb2/ConsultasWeb/consultas/rnc.aspx
+DGII_SEMILLA_URL=https://ecf.dgii.gov.do/eCF/Autenticacion/api/Autenticacion/Semilla
+DGII_TOKEN_URL=https://ecf.dgii.gov.do/eCF/autenticacion/api/Autenticacion/ValidarSemilla
+DGII_ECF_URL=https://ecf.dgii.gov.do/eCF/recepcion/api/FacturasElectronicas
+DGII_RFCE_URL=https://fc.dgii.gov.do/eCF/recepcionfc/api/recepcion/ecf
+DGII_ESTADO_URL=https://ecf.dgii.gov.do/eCF/consultaresultado/api/Consultas/Estado
+DGII_STATUS_ENDPOINT=https://ecf.dgii.gov.do/eCF/consultaresultado/api/Consultas/Estado
+DGII_ACECF_URL=https://ecf.dgii.gov.do/eCF/aprobacionComercial/api/AprobacionComercial
+DGII_ANULACION_URL=https://ecf.dgii.gov.do/eCF/anulacionrangos/api/operaciones/anularrango
+DGII_RNC_URL=https://ecf.dgii.gov.do/eCF/consultarnc/api/Consultas/rnc
+DGII_QR_URL=https://ecf.dgii.gov.do/eCF/consultatimbre
+DGII_QR_FC_URL=https://fc.dgii.gov.do/eCF/consultatimbrefc
 DGII_POLLING_INTERVAL_MS=300000
 
 # Email

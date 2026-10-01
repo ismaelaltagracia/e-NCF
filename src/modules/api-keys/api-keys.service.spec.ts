@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { createHash } from 'crypto';
 
@@ -31,6 +32,18 @@ describe('ApiKeysService', () => {
         {
           provide: getRepositoryToken(ApiKey),
           useValue: mockRepo,
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string, def?: unknown) => {
+              if (key === 'ENCRYPTION_KEY') {
+                // hex de 32 bytes (64 chars) para AES-256-GCM
+                return '0'.repeat(64);
+              }
+              return def;
+            }),
+          },
         },
       ],
     }).compile();
@@ -108,6 +121,8 @@ describe('ApiKeysService', () => {
         activo: true,
         created_at: new Date('2024-01-01'),
         last_used_at: null,
+        created_by_user_id: undefined,
+        created_by_nombre: null,
       });
       // Verify hash is not exposed
       expect(result[0]).not.toHaveProperty('key_hash');

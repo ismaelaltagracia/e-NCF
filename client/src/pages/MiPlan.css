@@ -46,11 +46,51 @@
   gap: 1rem;
 }
 
+.miplan-current-info {
+  flex: 1 1 320px;
+}
+
 .miplan-current-info h3 {
   font-size: 1.25rem;
   font-weight: 600;
   color: #213547;
   margin-bottom: 0.25rem;
+}
+
+/* Consumo mensual */
+.miplan-uso {
+  margin-top: 0.85rem;
+}
+
+.miplan-uso-texto {
+  font-size: 0.9rem;
+  color: #3c4043;
+  margin: 0 0 0.5rem;
+}
+
+.miplan-uso-restante {
+  color: #1a73e8;
+  font-weight: 600;
+}
+
+.miplan-uso-ilimitado {
+  color: #34a853;
+  font-weight: 600;
+}
+
+.miplan-uso-barra {
+  width: 100%;
+  max-width: 360px;
+  height: 8px;
+  background: #e8eaed;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.miplan-uso-barra-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease;
 }
 
 .miplan-current-details {

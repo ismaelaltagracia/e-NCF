@@ -28,10 +28,28 @@ const DEFAULT_CONFIG: RateLimitConfig = {
   windowSeconds: 60,
 };
 
+/**
+ * Factor de reducción del límite cuando se opera en modo degradado (Redis caído).
+ * Se aplica un límite en memoria más conservador como red de seguridad, en lugar
+ * de dejar pasar todo el tráfico sin control (fail-open) o bloquearlo por completo.
+ */
+const DEGRADED_LIMIT_FACTOR = 0.5;
+
+interface InMemoryBucket {
+  count: number;
+  resetAt: number;
+}
+
 @Injectable()
 export class RateLimitGuard implements CanActivate {
   private readonly logger = new Logger(RateLimitGuard.name);
   private readonly config: RateLimitConfig;
+
+  /**
+   * Contadores en memoria (por proceso) usados solo como respaldo cuando Redis
+   * no está disponible. No es un límite distribuido, pero evita el fail-open total.
+   */
+  private readonly memoryBuckets = new Map<string, InMemoryBucket>();
 
   constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {
     this.config = DEFAULT_CONFIG;
@@ -74,12 +92,57 @@ export class RateLimitGuard implements CanActivate {
       if (error instanceof HttpException) {
         throw error;
       }
-      // If Redis is unavailable, allow the request (graceful degradation)
+      // Redis no disponible: degradación controlada (fail-closed suave).
+      // En lugar de permitir todo el tráfico sin límite, se aplica un límite en
+      // memoria por proceso, más conservador, como red de seguridad.
       this.logger.warn(
-        `Rate limit check failed for key ${key}: ${(error as Error).message}. Allowing request.`,
+        `Rate limit (Redis) falló para ${key}: ${(error as Error).message}. Aplicando límite en memoria degradado.`,
       );
+      return this.inMemoryFallback(key, limit, now, response);
+    }
+  }
+
+  /**
+   * Limitador en memoria de respaldo (ventana fija por proceso) que se usa cuando
+   * Redis está caído. Aplica un límite reducido para contener abuso sin tumbar el
+   * servicio. No es distribuido: cada instancia cuenta por separado.
+   */
+  private inMemoryFallback(
+    key: string,
+    limit: number,
+    now: number,
+    response: { setHeader: (n: string, v: string) => void },
+  ): boolean {
+    const degradedLimit = Math.max(1, Math.floor(limit * DEGRADED_LIMIT_FACTOR));
+    const windowMs = this.config.windowSeconds * 1000;
+
+    const bucket = this.memoryBuckets.get(key);
+    if (!bucket || bucket.resetAt <= now) {
+      this.memoryBuckets.set(key, { count: 1, resetAt: now + windowMs });
       return true;
     }
+
+    if (bucket.count >= degradedLimit) {
+      const retryAfter = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
+      response.setHeader('Retry-After', String(retryAfter));
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          message: 'Demasiadas solicitudes (modo degradado). Intente de nuevo más tarde.',
+          error: 'Too Many Requests',
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    bucket.count += 1;
+    // Limpieza oportunista para evitar crecimiento no acotado del Map.
+    if (this.memoryBuckets.size > 10_000) {
+      for (const [k, b] of this.memoryBuckets) {
+        if (b.resetAt <= now) this.memoryBuckets.delete(k);
+      }
+    }
+    return true;
   }
 
   private getKeyAndLimit(user: RequestContext): { key: string; limit: number } {

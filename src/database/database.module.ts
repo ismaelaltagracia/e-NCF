@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TenantContextService } from './tenant-context.service.js';
 import { Plan } from './entities/plan.entity.js';
 import { Empresa } from './entities/empresa.entity.js';
 import { Usuario } from './entities/usuario.entity.js';
@@ -62,7 +63,11 @@ const entities = [
         password: config.get<string>('DB_PASSWORD', 'encf_password'),
         database: config.get<string>('DB_NAME', 'encf_db'),
         entities,
-        synchronize: config.get<string>('NODE_ENV') !== 'production',
+        // synchronize SOLO en development/test. Cualquier otro valor (incluido
+        // production o uno inesperado) mantiene el esquema gestionado por migraciones.
+        synchronize: ['development', 'test'].includes(
+          config.get<string>('NODE_ENV', 'development'),
+        ),
         migrationsRun: config.get<string>('NODE_ENV') === 'production',
         migrations: ['dist/database/migrations/*.js'],
         logging: config.get<string>('NODE_ENV') === 'development',
@@ -70,6 +75,7 @@ const entities = [
     }),
     TypeOrmModule.forFeature(entities),
   ],
-  exports: [TypeOrmModule],
+  providers: [TenantContextService],
+  exports: [TypeOrmModule, TenantContextService],
 })
 export class DatabaseModule {}

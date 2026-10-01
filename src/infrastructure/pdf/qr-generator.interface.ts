@@ -13,7 +13,7 @@ export const QR_GENERATOR = Symbol('QR_GENERATOR');
  * Payload con los datos necesarios para generar el QR de verificación DGII.
  */
 export interface QrPayload {
-  /** URL base de verificación DGII */
+  /** URL base de verificación DGII (según ambiente) */
   url_dgii: string;
   /** RNC del emisor */
   rnc_emisor: string;
@@ -21,8 +21,12 @@ export interface QrPayload {
   rnc_receptor: string;
   /** Código e-NCF del comprobante */
   encf: string;
+  /** Fecha de emisión en formato DGII (dd-mm-yyyy) */
+  fecha_emision: string;
   /** Monto total formateado a 2 decimales, sin símbolo de moneda (ej: "1500.00") */
   monto_total: string;
+  /** Código de Seguridad: primeros 6 caracteres del SignatureValue */
+  codigo_seguridad: string;
 }
 
 /**

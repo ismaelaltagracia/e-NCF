@@ -164,25 +164,26 @@ class _NuevaFacturaScreenState extends State<NuevaFacturaScreen> {
           ),
           const SizedBox(height: 8),
           Row(children: [
-            Expanded(child: TextField(
+            Expanded(flex: 2, child: TextField(
               decoration: const InputDecoration(labelText: 'Cant.', isDense: true),
               keyboardType: TextInputType.number,
               onChanged: (v) => setState(() => item.cantidad = double.tryParse(v) ?? 1),
             )),
-            const SizedBox(width: 8),
-            Expanded(child: TextField(
+            const SizedBox(width: 6),
+            Expanded(flex: 3, child: TextField(
               decoration: const InputDecoration(labelText: 'Precio', isDense: true),
               keyboardType: TextInputType.number,
               onChanged: (v) => setState(() => item.precio = double.tryParse(v) ?? 0),
             )),
-            const SizedBox(width: 8),
-            SizedBox(width: 70, child: DropdownButtonFormField<int>(
+            const SizedBox(width: 6),
+            Expanded(flex: 2, child: DropdownButtonFormField<int>(
               value: item.tasaItbis,
-              decoration: const InputDecoration(labelText: 'ITBIS', isDense: true),
+              decoration: const InputDecoration(labelText: 'ITBIS', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10)),
+              isExpanded: true,
               items: const [
-                DropdownMenuItem(value: 0, child: Text('0%')),
-                DropdownMenuItem(value: 16, child: Text('16%')),
-                DropdownMenuItem(value: 18, child: Text('18%')),
+                DropdownMenuItem(value: 0, child: Text('0%', style: TextStyle(fontSize: 13))),
+                DropdownMenuItem(value: 16, child: Text('16%', style: TextStyle(fontSize: 13))),
+                DropdownMenuItem(value: 18, child: Text('18%', style: TextStyle(fontSize: 13))),
               ],
               onChanged: (v) => setState(() => item.tasaItbis = v!),
             )),

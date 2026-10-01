@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type Redis from 'ioredis';
@@ -48,15 +49,24 @@ export interface RncValidationSkipped {
  *
  * @see Requisitos 33.1, 33.2, 33.3, 33.4, 33.5, 33.6
  */
+const DGII_RNC_TIMEOUT_MS = 5_000;
+
 @Injectable()
 export class RncValidatorService {
   private readonly logger = new Logger(RncValidatorService.name);
+  private readonly dgiiRncUrl: string;
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     @InjectRepository(RncContribuyente)
     private readonly rncRepo: Repository<RncContribuyente>,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.dgiiRncUrl = this.configService.get<string>(
+      'DGII_RNC_URL',
+      'https://ecf.dgii.gov.do/CerteCF/consultarnc/api/Consultas/rnc',
+    );
+  }
 
   /**
    * Valida un RNC contra el servicio de la DGII.
@@ -171,9 +181,28 @@ export class RncValidatorService {
    */
   private async consultarDgii(
     rnc: string,
-    _correlationId: string,
+    correlationId: string,
   ): Promise<RncValidationResult> {
-    // Primero consultar la tabla local de contribuyentes (CSV DGII)
+    // 1) Intentar el web service de consulta de RNC de la DGII (fuente autoritativa).
+    if (this.dgiiRncUrl) {
+      try {
+        const remoto = await this.consultarWebServiceDgii(rnc, correlationId);
+        if (remoto) {
+          return remoto;
+        }
+        // El web service respondió pero el RNC no existe: intentar el respaldo local
+        // antes de declararlo inexistente (el CSV puede tener datos válidos).
+      } catch (error: unknown) {
+        // Web service inalcanzable: continuar con el respaldo local (CSV).
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        this.logger.warn(
+          `Web service RNC DGII inalcanzable para ${rnc}: ${message}. Usando respaldo local (CSV).`,
+          `correlationId=${correlationId}`,
+        );
+      }
+    }
+
+    // 2) Respaldo: tabla local de contribuyentes (CSV DGII importado).
     const local = await this.rncRepo.findOne({ where: { rnc } });
     if (local) {
       const estado = this.normalizeEstado(local.estado);
@@ -186,7 +215,7 @@ export class RncValidatorService {
       };
     }
 
-    // Si no existe localmente, tratar como no encontrado
+    // 3) No encontrado en ninguna fuente.
     throw new HttpException(
       {
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -196,6 +225,61 @@ export class RncValidatorService {
       },
       HttpStatus.UNPROCESSABLE_ENTITY,
     );
+  }
+
+  /**
+   * Consulta el web service de RNC de la DGII con timeout de 5s.
+   *
+   * @returns el resultado validado si el RNC existe; null si el servicio responde
+   *          pero el RNC no existe (404); lanza DgiiUnreachableError si el servicio
+   *          es inalcanzable o responde con error de servidor.
+   */
+  private async consultarWebServiceDgii(
+    rnc: string,
+    correlationId: string,
+  ): Promise<RncValidationResult | null> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), DGII_RNC_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      const url = `${this.dgiiRncUrl}${this.dgiiRncUrl.includes('?') ? '&' : '?'}rnc=${encodeURIComponent(rnc)}`;
+      response = await fetch(url, {
+        method: 'GET',
+        headers: { Accept: 'application/json', 'X-Correlation-Id': correlationId },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (error: unknown) {
+      clearTimeout(timeoutId);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new DgiiUnreachableError(`Error de red contactando web service RNC: ${message}`);
+    }
+
+    if (response.status === 404) {
+      return null; // El servicio respondió: RNC no existe
+    }
+
+    if (!response.ok) {
+      // 5xx u otros: tratar como inalcanzable para caer al respaldo local
+      throw new DgiiUnreachableError(`Web service RNC respondió HTTP ${response.status}`);
+    }
+
+    const body = (await response.json()) as {
+      nombre_contribuyente?: string;
+      razon_social?: string;
+      nombre?: string;
+      estado?: string;
+    };
+
+    return {
+      rnc,
+      nombre_contribuyente:
+        body.nombre_contribuyente ?? body.razon_social ?? body.nombre ?? '',
+      estado: this.normalizeEstado(body.estado ?? 'activo'),
+      tipo_contribuyente: 'persona_juridica',
+      validado: true,
+    };
   }
 
   /**

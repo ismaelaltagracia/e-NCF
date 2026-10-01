@@ -72,6 +72,10 @@ export class EmpresasService {
     empresa.salt_encriptacion = iv;
     empresa.auth_tag = authTag;
 
+    // Encriptar y almacenar la contraseña del PKCS12 para poder firmar más adelante.
+    // Formato esperado por FirmaService.decryptPassword: IV[12] + authTag[16] + ciphertext.
+    empresa.certificado_password_encrypted = this.encryptPassword(password, encryptionKey);
+
     // Guardar fecha de vencimiento del certificado
     empresa.certificado_vence_en = certPem.validity.notAfter;
 
@@ -201,6 +205,22 @@ export class EmpresasService {
     const authTag = cipher.getAuthTag();
 
     return { encrypted, iv, authTag };
+  }
+
+  /**
+   * Encripta la contraseña del PKCS12 con AES-256-GCM.
+   * Empaqueta el resultado como IV[12] + authTag[16] + ciphertext, que es el
+   * formato que espera FirmaService.decryptPassword al firmar.
+   */
+  encryptPassword(password: string, key: Buffer): Buffer {
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+    const ciphertext = Buffer.concat([
+      cipher.update(Buffer.from(password, 'utf-8')),
+      cipher.final(),
+    ]);
+    const authTag = cipher.getAuthTag();
+    return Buffer.concat([iv, authTag, ciphertext]);
   }
 
   /**

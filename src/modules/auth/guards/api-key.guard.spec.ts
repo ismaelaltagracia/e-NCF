@@ -142,7 +142,7 @@ describe('ApiKeyGuard', () => {
 
     expect(apiKeyRepo.findOne).toHaveBeenCalledWith({
       where: { key_hash: keyHash },
-      relations: ['empresa'],
+      relations: ['empresa', 'empresa.plan'],
     });
   });
 });

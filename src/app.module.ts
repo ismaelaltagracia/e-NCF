@@ -1,7 +1,12 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { validateEnv } from './config/env.validation.js';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
+import { CorrelationIdInterceptor } from './common/interceptors/correlation-id.interceptor.js';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor.js';
 import { SpaFallbackMiddleware } from './common/middleware/spa-fallback.middleware.js';
 import { DatabaseModule } from './database/database.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -31,6 +36,7 @@ import { HealthModule } from './health/health.module.js';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env'],
+      validate: validateEnv,
     }),
     DatabaseModule,
     RedisModule,
@@ -56,7 +62,15 @@ import { HealthModule } from './health/health.module.js';
     HealthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Filtro de excepciones global: da forma uniforme a los errores y oculta
+    // stack traces al cliente.
+    { provide: APP_FILTER, useClass: GlobalExceptionFilter },
+    // Interceptores globales. CorrelationId primero para que el logging incluya el id.
+    { provide: APP_INTERCEPTOR, useClass: CorrelationIdInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

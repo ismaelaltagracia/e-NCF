@@ -81,13 +81,14 @@ function validateRegistroForm(values: {
 function Onboarding() {
   const [step, setStep] = useState<Step>('registro');
   const [accessToken, setAccessToken] = useState<string>('');
+  const [certificadoCargado, setCertificadoCargado] = useState(false);
 
   return (
     <div className="onboarding-page">
       <div className="onboarding-branding">
         <div className="onboarding-branding-content">
           <div className="onboarding-logo">
-            e-<span>NCF</span>
+            E-<span>MITTE</span>
           </div>
           <p className="onboarding-tagline">
             Registre su empresa y comience a facturar electrónicamente en minutos.
@@ -134,11 +135,18 @@ function Onboarding() {
           {step === 'certificado' && (
             <CertificadoStep
               accessToken={accessToken}
-              onSuccess={() => setStep('confirmacion')}
+              onSuccess={() => {
+                setCertificadoCargado(true);
+                setStep('confirmacion');
+              }}
+              onSkip={() => {
+                setCertificadoCargado(false);
+                setStep('confirmacion');
+              }}
             />
           )}
 
-          {step === 'confirmacion' && <ConfirmacionStep />}
+          {step === 'confirmacion' && <ConfirmacionStep certificadoCargado={certificadoCargado} />}
         </div>
       </div>
     </div>
@@ -272,7 +280,7 @@ function RegistroStep({ onSuccess }: { onSuccess: (token: string) => void }) {
     <>
       <div className="onboarding-header">
         <h2>Registro de Empresa</h2>
-        <p>Complete los datos para registrar su empresa en el sistema e-NCF.</p>
+        <p>Complete los datos para registrar su empresa en el sistema E-MITTE.</p>
       </div>
 
       <form className="onboarding-form" onSubmit={handleSubmit} noValidate>
@@ -409,9 +417,11 @@ function RegistroStep({ onSuccess }: { onSuccess: (token: string) => void }) {
 function CertificadoStep({
   accessToken,
   onSuccess,
+  onSkip,
 }: {
   accessToken: string;
   onSuccess: () => void;
+  onSkip: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [certPassword, setCertPassword] = useState('');
@@ -443,7 +453,7 @@ function CertificadoStep({
 
     const newErrors: CertErrors = {};
     if (!file) {
-      newErrors.file = 'Debe seleccionar un archivo de certificado';
+      newErrors.file = 'Seleccione un archivo o use "Omitir por ahora"';
     }
     if (!certPassword.trim()) {
       newErrors.password = 'Contraseña del certificado requerida';
@@ -499,7 +509,11 @@ function CertificadoStep({
     <>
       <div className="onboarding-header">
         <h2>Cargar Certificado Digital</h2>
-        <p>Cargue el certificado digital (.p12 o .pfx) emitido para su empresa.</p>
+        <p>
+          Cargue el certificado digital (.p12 o .pfx) emitido para su empresa. Este paso es
+          opcional: si aún no lo tiene, puede omitirlo y cargarlo más adelante desde
+          Configuración. Necesitará el certificado antes de emitir comprobantes.
+        </p>
       </div>
 
       <form className="onboarding-form" onSubmit={handleSubmit} noValidate>
@@ -553,6 +567,14 @@ function CertificadoStep({
           <button type="submit" className="btn-primary" disabled={submitting}>
             {submitting ? 'Cargando certificado...' : 'Cargar Certificado'}
           </button>
+          <button
+            type="button"
+            className="btn-skip"
+            onClick={onSkip}
+            disabled={submitting}
+          >
+            Omitir por ahora
+          </button>
         </div>
       </form>
     </>
@@ -561,7 +583,7 @@ function CertificadoStep({
 
 /* ---------- Step 3: Confirmación ---------- */
 
-function ConfirmacionStep() {
+function ConfirmacionStep({ certificadoCargado }: { certificadoCargado: boolean }) {
   return (
     <>
       <div className="onboarding-header">
@@ -570,11 +592,19 @@ function ConfirmacionStep() {
 
       <div className="confirmation">
         <div className="confirmation-icon" aria-hidden="true" />
-        <h3>¡Empresa activada exitosamente!</h3>
-        <p>
-          Su empresa ha sido registrada y el certificado digital ha sido verificado correctamente.
-          Ya puede comenzar a emitir comprobantes fiscales electrónicos.
-        </p>
+        <h3>¡Empresa registrada exitosamente!</h3>
+        {certificadoCargado ? (
+          <p>
+            Su empresa ha sido registrada y el certificado digital ha sido verificado
+            correctamente. Ya puede comenzar a emitir comprobantes fiscales electrónicos.
+          </p>
+        ) : (
+          <p>
+            Su empresa ha sido registrada. Aún no ha cargado un certificado digital: podrá
+            hacerlo cuando lo tenga, desde <strong>Configuración → Certificado</strong>.
+            Necesitará el certificado antes de poder emitir comprobantes fiscales electrónicos.
+          </p>
+        )}
         <Link to="/dashboard" className="btn-secondary">
           Ir al Inicio
         </Link>

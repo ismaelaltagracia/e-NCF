@@ -138,16 +138,20 @@ describe('ConversorXmlService', () => {
     });
 
     it('should not include optional sections when absent from payload', async () => {
+      // Un e-CF válido siempre lleva DetallesItems; las secciones realmente
+      // opcionales (InformacionReferencia) no deben aparecer si no se proveen.
       const minimalPayload: Record<string, unknown> = {
         Encabezado: {
           IdDoc: { TipoeCF: 31 },
           Emisor: { RNCEmisor: '101234567' },
         },
+        items: [
+          { descripcion: 'Servicio', cantidad: 1, precio_unitario: 1000, tasa_itbis: 18 },
+        ],
       };
 
       const result = await service.convertir(minimalPayload, 'E310000000001');
 
-      expect(result).not.toContain('<DetallesItems>');
       expect(result).not.toContain('<InformacionReferencia>');
     });
 
@@ -168,17 +172,56 @@ describe('ConversorXmlService', () => {
     });
 
     it('should preserve numeric precision in round-trip', async () => {
+      // Ítem exento por 12345.67: MontoTotal debe conservar los 2 decimales.
       const payload: Record<string, unknown> = {
         Encabezado: {
           IdDoc: { TipoeCF: 31 },
           Emisor: { RNCEmisor: '101234567' },
-          Totales: { MontoTotal: 12345.67 },
         },
+        items: [
+          { descripcion: 'Servicio exento', cantidad: 1, precio_unitario: 12345.67, tasa_itbis: 0 },
+        ],
       };
 
       const result = await service.convertir(payload, 'E310000000001');
 
       expect(result).toContain('12345.67');
+    });
+  });
+
+  describe('RFCE / Resumen de Factura de Consumo', () => {
+    it('should flag E32 below the threshold as resumen', () => {
+      expect(service.debeUsarResumen('E32', 100000)).toBe(true);
+    });
+
+    it('should NOT flag E32 at or above the threshold as resumen', () => {
+      expect(service.debeUsarResumen('E32', 250000)).toBe(false);
+      expect(service.debeUsarResumen('E32', 300000)).toBe(false);
+    });
+
+    it('should NOT flag non-E32 comprobantes as resumen', () => {
+      expect(service.debeUsarResumen('E31', 100)).toBe(false);
+    });
+
+    it('should build an RFCE XML with the resumen namespace and no item detail', async () => {
+      const payload: Record<string, unknown> = {
+        Encabezado: {
+          IdDoc: { TipoeCF: 'E32' },
+          Emisor: { RNCEmisor: '123456789', RazonSocialEmisor: 'Emisor SRL' },
+        },
+        items: [
+          { descripcion: 'Venta', cantidad: 1, precio_unitario: 1000, tasa_itbis: 18 },
+        ],
+        codigo_seguridad: 'ABC123',
+      };
+
+      const xml = await service.convertirResumen(payload, 'E320000000001');
+
+      expect(xml).toContain('resumenfactura');
+      expect(xml).toContain('<RFCE');
+      expect(xml).toContain('E320000000001');
+      expect(xml).toContain('ABC123');
+      expect(xml).not.toContain('<DetallesItems>');
     });
   });
 

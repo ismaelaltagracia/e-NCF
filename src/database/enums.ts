@@ -41,6 +41,7 @@ export enum TipoComprobante {
   E44 = 'E44',
   E45 = 'E45',
   E46 = 'E46',
+  E47 = 'E47',
 }
 
 export enum TipoCatalogo {

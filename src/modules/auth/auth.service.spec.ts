@@ -66,6 +66,9 @@ describe('AuthService', () => {
     password_hash: passwordHash,
     nombre: 'Super Admin',
     activo: true,
+    intentos_fallidos: 0,
+    primer_intento_fallido: null,
+    bloqueado_hasta: null,
   };
 
   beforeEach(async () => {
@@ -82,6 +85,7 @@ describe('AuthService', () => {
 
     superAdminRepo = {
       findOne: jest.fn(),
+      save: jest.fn().mockImplementation((entity) => Promise.resolve(entity)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -217,6 +221,39 @@ describe('AuthService', () => {
       }) as jwt.JwtPayload;
       expect(decoded.rol).toBe('super_admin');
       expect(decoded.empresa_id).toBe('');
+    });
+
+    it('should lock the SuperAdmin after MAX failed attempts', async () => {
+      const superAdminAt4: Partial<SuperAdmin> = {
+        ...mockSuperAdmin,
+        intentos_fallidos: 4,
+        primer_intento_fallido: new Date(),
+        bloqueado_hasta: null,
+      };
+      superAdminRepo.findOne!.mockResolvedValue(superAdminAt4);
+      superAdminRepo.save!.mockResolvedValue(superAdminAt4 as SuperAdmin);
+
+      await expect(service.login('admin@system.com', 'WrongPass!')).rejects.toThrow(
+        UnauthorizedException,
+      );
+
+      // El 5.º intento fallido debe fijar bloqueado_hasta
+      const saved = superAdminRepo.save!.mock.calls.at(-1)?.[0] as SuperAdmin;
+      expect(saved.intentos_fallidos).toBe(5);
+      expect(saved.bloqueado_hasta).toBeInstanceOf(Date);
+    });
+
+    it('should reject login with 429 when SuperAdmin is locked', async () => {
+      const lockedSuperAdmin: Partial<SuperAdmin> = {
+        ...mockSuperAdmin,
+        intentos_fallidos: 5,
+        bloqueado_hasta: new Date(Date.now() + 10 * 60 * 1000),
+      };
+      superAdminRepo.findOne!.mockResolvedValue(lockedSuperAdmin);
+
+      await expect(service.login('admin@system.com', 'SecurePass123!')).rejects.toThrow(
+        HttpException,
+      );
     });
 
     it('should increment failed attempts on wrong password', async () => {

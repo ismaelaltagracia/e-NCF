@@ -72,6 +72,7 @@ describe('SecuenciasNcfService', () => {
         numero_fin: '1000',
         numero_actual: '1',
         activo: true,
+        ambiente: 'certificacion',
       });
       expect(repo.save).toHaveBeenCalledWith(mockSecuencia);
       expect(result).toEqual(mockSecuencia);

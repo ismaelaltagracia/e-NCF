@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as crypto from 'node:crypto';
 
+import { formatDateDgii } from '../../common/utils/date-format.js';
 import { FacturaElectronica } from '../../database/entities/factura-electronica.entity.js';
 import { Empresa } from '../../database/entities/empresa.entity.js';
 import { EstadoDgii, ModoNcf } from '../../database/enums.js';
@@ -194,25 +194,55 @@ export class FacturasService {
     // Step 8: Sign XML
     const xmlFirmado = await this.firmaService.firmarEcf(xml, empresaId);
 
-    // Step 8.1: Compute security code from signature
-    const signatureMatch = xmlFirmado.match(/<ds:SignatureValue[^>]*>([^<]+)<\/ds:SignatureValue>/);
-    const codigoSeguridad = signatureMatch
-      ? crypto.createHash('sha256').update(signatureMatch[1]).digest('hex').substring(0, 6).toUpperCase()
-      : '000000';
+    // Step 8.1: Compute security code from signature.
+    // La DGII define el Código de Seguridad como los primeros 6 caracteres del
+    // SignatureValue (valor base64 de la firma), no un hash del mismo.
+    const signatureMatch = xmlFirmado.match(
+      /<(?:ds:)?SignatureValue[^>]*>([\s\S]*?)<\/(?:ds:)?SignatureValue>/,
+    );
+    const signatureValue = signatureMatch ? signatureMatch[1].replace(/\s+/g, '') : '';
+    const codigoSeguridad = signatureValue ? signatureValue.substring(0, 6) : '';
+    if (!codigoSeguridad) {
+      this.logger.warn(
+        `No se pudo extraer el Código de Seguridad de la firma para factura ${savedFactura.id}`,
+      );
+    }
 
     // Store codigo_seguridad in payload_json
+    const prevPayload = (savedFactura.payload_json || {}) as Record<string, unknown>;
+    const fechaEmision =
+      (prevPayload['fecha_emision'] as string) ||
+      formatDateDgii(new Date());
     const payloadConCodigo = {
-      ...(savedFactura.payload_json || {}),
+      ...prevPayload,
       codigo_seguridad: codigoSeguridad,
+      fecha_emision: fechaEmision,
     };
     savedFactura.payload_json = payloadConCodigo;
+
+    // Step 8.2: RFCE — Resumen de Factura de Consumo bajo umbral.
+    // Para E32 por debajo del umbral, la DGII exige transmitir un Resumen (RFCE)
+    // en lugar del e-CF completo. Se regenera el XML como resumen (incluyendo el
+    // código de seguridad derivado de la firma del e-CF) y se firma de nuevo.
+    let xmlParaTransmitir = xmlFirmado;
+    const montoTotalNum = Number(dto.monto_total ?? 0);
+    if (this.conversorXmlService.debeUsarResumen(dto.tipo_comprobante ?? '', montoTotalNum)) {
+      const xmlResumen = await this.conversorXmlService.convertirResumen(
+        payloadConCodigo,
+        eNcf,
+      );
+      xmlParaTransmitir = await this.firmaService.firmarEcf(xmlResumen, empresaId);
+      this.logger.log(
+        `Factura ${savedFactura.id} (E32, monto ${montoTotalNum}) se transmite como Resumen RFCE`,
+      );
+    }
 
     // Step 9: Upload XML to storage
     const storageKey = `${empresaId}/${savedFactura.id}.xml`;
     const xmlS3Url = await this.storageProvider.upload(
       BUCKET_FACTURAS_XML,
       storageKey,
-      Buffer.from(xmlFirmado, 'utf-8'),
+      Buffer.from(xmlParaTransmitir, 'utf-8'),
       'application/xml',
     );
 
@@ -226,9 +256,10 @@ export class FacturasService {
       resultado = await this.transmisionService.transmitir({
         factura_id: savedFactura.id,
         empresa_id: empresaId,
-        xml_firmado: xmlFirmado,
+        xml_firmado: xmlParaTransmitir,
         correlation_id: correlationId,
         ambiente: empresa.ambiente_dgii,
+        nombre_archivo: `${empresa.rnc}${eNcf}.xml`,
       });
     } catch {
       // Transmission failed (circuit breaker open, DGII unreachable, etc.)
@@ -467,7 +498,7 @@ export class FacturasService {
           </table>
           <p style="color: #6b7280; font-size: 0.85rem;">El PDF adjunto contiene un código QR para verificación en la DGII.</p>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0;" />
-          <p style="color: #9ca3af; font-size: 0.75rem;">Este correo fue generado automáticamente por el sistema e-NCF.</p>
+          <p style="color: #9ca3af; font-size: 0.75rem;">Este correo fue generado automáticamente por el sistema E-MITTE.</p>
         </div>
       `,
       attachments: [

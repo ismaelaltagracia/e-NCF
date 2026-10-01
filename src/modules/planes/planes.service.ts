@@ -194,11 +194,23 @@ export class PlanesService implements OnModuleInit {
 
     const uso = await this.getOrCreateUsoMensual(empresaId);
 
-    const limite = uso.limite_aplicado;
+    // El límite y nombre vigentes provienen del plan actual de la empresa, no del
+    // valor "congelado" al crear el registro mensual. Si difieren, se re-sincroniza
+    // el registro para que verificarLimite/incrementarUso usen el límite correcto.
+    const planLimite = empresa.plan?.limite_facturas_mensual ?? null;
+    const planNombre = empresa.plan?.nombre ?? uso.plan_nombre;
+
+    if (uso.limite_aplicado !== planLimite || uso.plan_nombre !== planNombre) {
+      uso.limite_aplicado = planLimite;
+      uso.plan_nombre = planNombre;
+      await this.usoMensualRepo.save(uso);
+    }
+
+    const limite = planLimite;
     const restante = limite === null ? null : Math.max(0, limite - uso.facturas_generadas);
 
     return {
-      plan_nombre: uso.plan_nombre,
+      plan_nombre: planNombre,
       limite_mensual: limite,
       facturas_generadas: uso.facturas_generadas,
       restante,
@@ -218,6 +230,22 @@ export class PlanesService implements OnModuleInit {
     }
 
     empresa.plan_id = planId;
-    return this.empresaRepo.save(empresa);
+    const saved = await this.empresaRepo.save(empresa);
+
+    // Sincroniza el registro de uso del mes en curso con el nuevo plan, para que
+    // el límite y el nombre se reflejen de inmediato en la vista "Mi Plan".
+    const now = new Date();
+    const anio = now.getFullYear();
+    const mes = now.getMonth() + 1;
+    const uso = await this.usoMensualRepo.findOne({
+      where: { empresa_id: empresaId, anio, mes },
+    });
+    if (uso) {
+      uso.limite_aplicado = plan.limite_facturas_mensual ?? null;
+      uso.plan_nombre = plan.nombre;
+      await this.usoMensualRepo.save(uso);
+    }
+
+    return saved;
   }
 }

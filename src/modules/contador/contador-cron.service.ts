@@ -116,7 +116,7 @@ export class ContadorCronService {
 
       await this.emailService.send({
         to: contador.email_facturacion,
-        subject: `Factura mensual e-NCF — ${factura.periodo}`,
+        subject: `Factura mensual E-MITTE — ${factura.periodo}`,
         html: `
           <div style="font-family:-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:2rem;">
             <h2 style="color:#0f1b2d;">Factura mensual</h2>
@@ -130,7 +130,7 @@ export class ContadorCronService {
             ${Number(factura.descuento) > 0 ? `<p style="color:#059669;">Ahorro por descuento: RD$ ${Number(factura.descuento).toFixed(2)}</p>` : ''}
             <p style="color:#6b7280;font-size:0.85rem;">Tiene 5 días para realizar el pago. Después de ese plazo las empresas serán suspendidas.</p>
             <hr style="margin:1.5rem 0;border:none;border-top:1px solid #e5e7eb;">
-            <p style="color:#9ca3af;font-size:0.75rem;">Este correo fue generado automáticamente por e-NCF.</p>
+            <p style="color:#9ca3af;font-size:0.75rem;">Este correo fue generado automáticamente por E-MITTE.</p>
           </div>
         `,
       });

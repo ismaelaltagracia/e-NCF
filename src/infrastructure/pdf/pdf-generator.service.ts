@@ -55,12 +55,15 @@ export class PdfGeneratorService implements IPdfGeneratorService {
     factura: FacturaElectronica,
     formato: 'ticket' | 'carta',
   ): Promise<Buffer> {
+    const payload = factura.payload_json ?? {};
     const qrBuffer = await this.qrGenerator.generar({
-      url_dgii: 'https://dgii.gov.do/app/WebApps/ConsultaNCF/ConsultaNCF',
+      url_dgii: this.getConsultaUrl(factura.ambiente, factura.e_ncf ?? ''),
       rnc_emisor: factura.empresa?.rnc ?? '',
       rnc_receptor: this.extractRncReceptor(factura),
       encf: factura.e_ncf ?? '',
+      fecha_emision: String(payload['fecha_emision'] ?? ''),
       monto_total: this.extractMontoTotal(factura),
+      codigo_seguridad: String(payload['codigo_seguridad'] ?? ''),
     });
 
     const doc = this.createDocument(formato);
@@ -287,6 +290,24 @@ export class PdfGeneratorService implements IPdfGeneratorService {
     }
     doc.text(`e-NCF: ${factura.e_ncf ?? 'N/A'}`, { align: 'center' });
     doc.text(`Track_ID: ${factura.track_id ?? 'N/A'}`, { align: 'center' });
+  }
+
+  /**
+   * Devuelve la URL base de consulta de timbre de la DGII para el QR del PDF,
+   * según el ambiente y el tipo de comprobante.
+   *
+   * - Factura de Consumo (E32): host fc.dgii.gov.do, ruta consultatimbrefc.
+   * - Resto de e-CF: host ecf.dgii.gov.do, ruta consultatimbre.
+   *
+   * El ambiente de la factura ('produccion' | 'certificacion') se mapea al
+   * segmento de ruta de la DGII (ecf | certecf).
+   */
+  private getConsultaUrl(ambiente: string | undefined, eNcf: string): string {
+    const segmento = ambiente === 'produccion' ? 'ecf' : 'certecf';
+    const esConsumo = eNcf.startsWith('E32');
+    return esConsumo
+      ? `https://fc.dgii.gov.do/${segmento}/consultatimbrefc`
+      : `https://ecf.dgii.gov.do/${segmento}/consultatimbre`;
   }
 
   /**

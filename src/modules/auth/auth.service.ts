@@ -259,9 +259,53 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
+    // Bloqueo por intentos fallidos (misma política que usuarios: 5 intentos / 15 min)
+    if (superAdmin.bloqueado_hasta && superAdmin.bloqueado_hasta.getTime() > Date.now()) {
+      throw new HttpException(
+        'Demasiados intentos de login. Intente nuevamente más tarde.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    // Si el bloqueo expiró, reiniciar el contador
+    if (superAdmin.bloqueado_hasta && superAdmin.bloqueado_hasta.getTime() <= Date.now()) {
+      superAdmin.intentos_fallidos = 0;
+      superAdmin.bloqueado_hasta = null;
+      superAdmin.primer_intento_fallido = null;
+      await this.superAdminRepo.save(superAdmin);
+    }
+
     const passwordValid = await bcrypt.compare(password, superAdmin.password_hash);
     if (!passwordValid) {
+      const now = Date.now();
+      if (
+        !superAdmin.primer_intento_fallido ||
+        now - superAdmin.primer_intento_fallido.getTime() > LOCKOUT_WINDOW_MS
+      ) {
+        superAdmin.intentos_fallidos = 1;
+        superAdmin.primer_intento_fallido = new Date(now);
+      } else {
+        superAdmin.intentos_fallidos += 1;
+      }
+
+      if (superAdmin.intentos_fallidos >= MAX_FAILED_ATTEMPTS) {
+        superAdmin.bloqueado_hasta = new Date(now + LOCKOUT_DURATION_MS);
+      }
+
+      await this.superAdminRepo.save(superAdmin);
       throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    // Login exitoso: reiniciar contadores si los hubiera
+    if (
+      superAdmin.intentos_fallidos > 0 ||
+      superAdmin.bloqueado_hasta ||
+      superAdmin.primer_intento_fallido
+    ) {
+      superAdmin.intentos_fallidos = 0;
+      superAdmin.bloqueado_hasta = null;
+      superAdmin.primer_intento_fallido = null;
+      await this.superAdminRepo.save(superAdmin);
     }
 
     const accessToken = await this.generateAccessToken({

@@ -14,12 +14,15 @@ import { TransmisionService } from '../../dgii/transmision.service.js';
 import { RncValidatorService } from '../../dgii/rnc-validator.service.js';
 import { STORAGE_PROVIDER } from '../../infrastructure/storage/storage.interface.js';
 import { RETRY_QUEUE_SERVICE } from '../../infrastructure/queue/retry-queue.interfaces.js';
+import { PDF_GENERATOR } from '../../infrastructure/pdf/pdf-generator.interface.js';
+import { EMAIL_SERVICE } from '../../infrastructure/email/email.interface.js';
 
 describe('FacturasService - Query Methods', () => {
   let service: FacturasService;
   let facturaRepo: {
     findAndCount: jest.Mock;
     findOne: jest.Mock;
+    createQueryBuilder: jest.Mock;
   };
 
   const empresaId = 'empresa-uuid-1';
@@ -47,11 +50,22 @@ describe('FacturasService - Query Methods', () => {
     updated_at: new Date('2024-01-15T11:05:00Z'),
   };
 
+  // Crea un mock de QueryBuilder encadenable que resuelve getManyAndCount con [data, total].
+  const makeQb = (data: unknown[], total: number) => {
+    const qb: Record<string, jest.Mock> = {};
+    for (const m of ['where', 'andWhere', 'orderBy', 'skip', 'take']) {
+      qb[m] = jest.fn().mockReturnValue(qb);
+    }
+    qb.getManyAndCount = jest.fn().mockResolvedValue([data, total]);
+    return qb;
+  };
+
   beforeEach(async () => {
     facturaRepo = {
       findAndCount: jest.fn(),
       findOne: jest.fn(),
-    };
+      createQueryBuilder: jest.fn(),
+    } as unknown as typeof facturaRepo;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -96,6 +110,14 @@ describe('FacturasService - Query Methods', () => {
           provide: RETRY_QUEUE_SERVICE,
           useValue: null,
         },
+        {
+          provide: PDF_GENERATOR,
+          useValue: {},
+        },
+        {
+          provide: EMAIL_SERVICE,
+          useValue: {},
+        },
       ],
     }).compile();
 
@@ -105,19 +127,17 @@ describe('FacturasService - Query Methods', () => {
   describe('listarFacturas', () => {
     it('should return paginated facturas filtered by empresa_id', async () => {
       const facturas = [mockFactura];
-      facturaRepo.findAndCount.mockResolvedValue([facturas, 1]);
+      const qb = makeQb(facturas, 1);
+      facturaRepo.createQueryBuilder.mockReturnValue(qb);
 
       const result = await service.listarFacturas(empresaId, {
         page: 1,
         limit: 20,
       });
 
-      expect(facturaRepo.findAndCount).toHaveBeenCalledWith({
-        where: { empresa_id: empresaId },
-        order: { created_at: 'DESC' },
-        skip: 0,
-        take: 20,
-      });
+      expect(qb.where).toHaveBeenCalledWith('f.empresa_id = :empresaId', { empresaId });
+      expect(qb.skip).toHaveBeenCalledWith(0);
+      expect(qb.take).toHaveBeenCalledWith(20);
       expect(result).toEqual({
         data: facturas,
         total: 1,
@@ -128,20 +148,18 @@ describe('FacturasService - Query Methods', () => {
     });
 
     it('should calculate correct skip for page 2', async () => {
-      facturaRepo.findAndCount.mockResolvedValue([[], 0]);
+      const qb = makeQb([], 0);
+      facturaRepo.createQueryBuilder.mockReturnValue(qb);
 
       await service.listarFacturas(empresaId, { page: 2, limit: 10 });
 
-      expect(facturaRepo.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          skip: 10,
-          take: 10,
-        }),
-      );
+      expect(qb.skip).toHaveBeenCalledWith(10);
+      expect(qb.take).toHaveBeenCalledWith(10);
     });
 
     it('should filter by estado_dgii when provided', async () => {
-      facturaRepo.findAndCount.mockResolvedValue([[], 0]);
+      const qb = makeQb([], 0);
+      facturaRepo.createQueryBuilder.mockReturnValue(qb);
 
       await service.listarFacturas(empresaId, {
         page: 1,
@@ -149,15 +167,14 @@ describe('FacturasService - Query Methods', () => {
         estado_dgii: EstadoDgii.ACEPTADO,
       });
 
-      expect(facturaRepo.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { empresa_id: empresaId, estado_dgii: EstadoDgii.ACEPTADO },
-        }),
-      );
+      expect(qb.andWhere).toHaveBeenCalledWith('f.estado_dgii = :estado_dgii', {
+        estado_dgii: EstadoDgii.ACEPTADO,
+      });
     });
 
     it('should calculate totalPages correctly', async () => {
-      facturaRepo.findAndCount.mockResolvedValue([[], 45]);
+      const qb = makeQb([], 45);
+      facturaRepo.createQueryBuilder.mockReturnValue(qb);
 
       const result = await service.listarFacturas(empresaId, {
         page: 1,
@@ -168,7 +185,8 @@ describe('FacturasService - Query Methods', () => {
     });
 
     it('should return empty data when no facturas exist', async () => {
-      facturaRepo.findAndCount.mockResolvedValue([[], 0]);
+      const qb = makeQb([], 0);
+      facturaRepo.createQueryBuilder.mockReturnValue(qb);
 
       const result = await service.listarFacturas(empresaId, {
         page: 1,

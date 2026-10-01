@@ -280,6 +280,10 @@ export class FirmaService implements IFirmaService {
             transforms: ['enveloped', 'exc-c14n'],
           },
         ],
+        // XAdES-BES conforme al estándar de firma de e-CF de la DGII de RD:
+        // enveloped + exclusive C14N + SHA-256, con SigningCertificate y SigningTime
+        // en xades:SignedProperties. La DGII usa XAdES-BES (no XAdES-EPES), por lo
+        // que NO se incluye SignaturePolicyIdentifier a propósito.
         signingCertificate: signingCertPem,
         signingTime: {
           value: new Date(),
@@ -288,7 +292,38 @@ export class FirmaService implements IFirmaService {
       },
     );
 
-    return signedXml.toString();
+    const firmado = signedXml.toString();
+    this.verificarEstructuraFirma(firmado);
+    return firmado;
+  }
+
+  /**
+   * Verifica que el XML firmado contenga los elementos XAdES-BES obligatorios.
+   * Falla temprano (antes de transmitir) si la firma quedó incompleta, en lugar
+   * de que la DGII rechace el documento.
+   */
+  private verificarEstructuraFirma(xmlFirmado: string): void {
+    const requeridos: Array<{ nombre: string; regex: RegExp }> = [
+      { nombre: 'Signature', regex: /<(?:ds:)?Signature[\s>]/ },
+      { nombre: 'SignatureValue', regex: /<(?:ds:)?SignatureValue[\s>]/ },
+      { nombre: 'X509Certificate', regex: /<(?:ds:)?X509Certificate[\s>]/ },
+      { nombre: 'SignedProperties', regex: /<(?:xades:)?SignedProperties[\s>]/ },
+      { nombre: 'SigningCertificate', regex: /<(?:xades:)?SigningCertificate[\s>]/ },
+      { nombre: 'SigningTime', regex: /<(?:xades:)?SigningTime[\s>]/ },
+    ];
+
+    const faltantes = requeridos
+      .filter((r) => !r.regex.test(xmlFirmado))
+      .map((r) => r.nombre);
+
+    if (faltantes.length > 0) {
+      this.logger.error(
+        `La firma XAdES-BES quedó incompleta. Elementos faltantes: ${faltantes.join(', ')}`,
+      );
+      throw new UnauthorizedException(
+        `No se pudo generar una firma XAdES-BES válida (faltan: ${faltantes.join(', ')})`,
+      );
+    }
   }
 
   /**

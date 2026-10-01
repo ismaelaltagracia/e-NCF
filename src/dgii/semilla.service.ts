@@ -7,15 +7,15 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { getCorrelationId } from '../common/interceptors/correlation-id.interceptor.js';
 
-const SOAP_ENVELOPE = `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-  <soap:Body>
-    <SemillaInput xmlns="urn:dgii.gov.do:ecf:remision:2019" />
-  </soap:Body>
-</soap:Envelope>`;
-
 const TIMEOUT_MS = 10_000;
 
+/**
+ * Servicio de solicitud de la semilla de autenticación de la DGII.
+ *
+ * La semilla es un XML plano que se obtiene por GET al endpoint REST de
+ * autenticación; luego se firma con el certificado de la empresa y se envía de
+ * vuelta para obtener el token (ver DgiiTokenService). No usa SOAP.
+ */
 @Injectable()
 export class SemillaService {
   private readonly logger = new Logger(SemillaService.name);
@@ -24,27 +24,27 @@ export class SemillaService {
   constructor(private readonly configService: ConfigService) {
     this.semillaUrl = this.configService.get<string>(
       'DGII_SEMILLA_URL',
-      'https://ecf.dgii.gov.do/CerteCF/WSCertificacion.asmx',
+      'https://ecf.dgii.gov.do/CerteCF/Autenticacion/api/Autenticacion/Semilla',
     );
   }
 
   /**
-   * Returns the DGII base URL based on the ambiente.
-   * Certificación uses CerteCF paths, producción uses ECF paths.
+   * Devuelve la URL de la semilla según el ambiente. En producción se usa el
+   * segmento de ruta "eCF" en lugar de "CerteCF".
    */
   private getDgiiSemillaUrl(ambiente?: string): string {
     if (ambiente === 'produccion') {
-      return 'https://ecf.dgii.gov.do/ECF/WSCertificacion.asmx';
+      return this.semillaUrl.replace('/CerteCF/', '/eCF/');
     }
     return this.semillaUrl;
   }
 
   /**
-   * Solicita una semilla XML al endpoint SOAP de la DGII.
+   * Solicita la semilla XML al endpoint REST de la DGII mediante GET.
    * @param ambiente - Ambiente de la empresa ('certificacion' | 'produccion')
-   * @returns El contenido XML completo de la respuesta SOAP con la semilla.
+   * @returns El XML de la semilla.
    * @throws ServiceUnavailableException si el endpoint es inalcanzable, timeout o respuesta no-200.
-   * @throws BadGatewayException si la respuesta no es XML bien formado o falta el elemento raíz esperado.
+   * @throws BadGatewayException si la respuesta no es XML bien formado.
    */
   async solicitarSemilla(ambiente?: string): Promise<string> {
     const correlationId = getCorrelationId() ?? 'no-correlation';
@@ -55,19 +55,16 @@ export class SemillaService {
       const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
       response = await fetch(this.getDgiiSemillaUrl(ambiente), {
-        method: 'POST',
+        method: 'GET',
         headers: {
-          'Content-Type': 'text/xml; charset=utf-8',
-          SOAPAction: '"urn:dgii.gov.do:ecf:remision:2019/GetSemilla"',
+          Accept: 'application/xml',
         },
-        body: SOAP_ENVELOPE,
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown error';
+      const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
         `Error solicitando semilla DGII: ${message}`,
         undefined,
@@ -97,11 +94,10 @@ export class SemillaService {
   }
 
   /**
-   * Valida que el cuerpo de la respuesta sea XML bien formado y contenga
-   * el elemento raíz esperado (soap:Envelope con contenido de semilla).
+   * Valida que el cuerpo de la respuesta sea XML bien formado y contenga el
+   * elemento raíz esperado de la semilla (<SemillaModel> o similar).
    */
   private validarXml(xml: string, correlationId: string): void {
-    // Verificar que es XML bien formado: debe tener declaración XML o iniciar con '<'
     const trimmed = xml.trim();
     if (!trimmed.startsWith('<')) {
       this.logger.error(
@@ -114,7 +110,6 @@ export class SemillaService {
       );
     }
 
-    // Verificar estructura XML básica: tags balanceados y bien formados
     if (!this.esXmlBienFormado(trimmed)) {
       this.logger.error(
         'Respuesta DGII no es XML bien formado',
@@ -125,47 +120,28 @@ export class SemillaService {
         'La respuesta de la DGII no es un documento XML bien formado',
       );
     }
-
-    // Verificar elemento raíz esperado: soap:Envelope o Envelope
-    if (!this.contieneElementoRaizEsperado(trimmed)) {
-      this.logger.error(
-        'Respuesta DGII no contiene el elemento raíz esperado (soap:Envelope)',
-        undefined,
-        `correlationId=${correlationId}`,
-      );
-      throw new BadGatewayException(
-        'La respuesta de la DGII no contiene el elemento raíz esperado',
-      );
-    }
   }
 
   /**
-   * Verifica que el XML es bien formado usando validación básica de estructura.
-   * Comprueba que los tags están correctamente anidados y cerrados.
+   * Verifica que el XML es bien formado (tags balanceados).
    */
   private esXmlBienFormado(xml: string): boolean {
     try {
-      // Check for basic XML structural validity
       const tagStack: string[] = [];
-      // Match opening tags, closing tags, and self-closing tags
       const tagRegex =
         /<\/?([a-zA-Z_][\w:.-]*)((?:\s+[a-zA-Z_][\w:.-]*\s*=\s*(?:"[^"]*"|'[^']*'))*)\s*(\/?)>|<\?[^?]*\?>/g;
       let match: RegExpExecArray | null;
 
       while ((match = tagRegex.exec(xml)) !== null) {
         const fullMatch = match[0];
-
-        // Skip processing instructions like <?xml ... ?>
         if (fullMatch.startsWith('<?')) {
           continue;
         }
-
         const tagName = match[1];
         const isSelfClosing = match[3] === '/';
         const isClosing = fullMatch.startsWith('</');
 
         if (isSelfClosing) {
-          // Self-closing tags are fine, no stack change
           continue;
         } else if (isClosing) {
           if (tagStack.length === 0 || tagStack[tagStack.length - 1] !== tagName) {
@@ -181,16 +157,5 @@ export class SemillaService {
     } catch {
       return false;
     }
-  }
-
-  /**
-   * Verifica que el XML contiene el elemento raíz esperado para una respuesta SOAP de semilla.
-   * El elemento raíz debe ser soap:Envelope (o variante de namespace).
-   */
-  private contieneElementoRaizEsperado(xml: string): boolean {
-    // Match soap:Envelope or variants like s:Envelope, soapenv:Envelope, or just Envelope with soap namespace
-    const envelopePattern =
-      /<(?:[a-zA-Z_][\w.-]*:)?Envelope[\s>]/i;
-    return envelopePattern.test(xml);
   }
 }

@@ -1,0 +1,65 @@
+name: Deploy a producción
+
+# Se dispara al hacer push/merge a la rama "produccion".
+# También permite lanzarlo manualmente desde la pestaña Actions (workflow_dispatch).
+on:
+  push:
+    branches: [produccion]
+  workflow_dispatch:
+
+# Evita despliegues solapados: si llega un push mientras otro deploy corre,
+# se cancela el anterior en curso.
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Desplegar en servidor Debian
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conectar por SSH y desplegar
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          # Falla el job si cualquier comando del script falla.
+          script_stop: true
+          command_timeout: "20m"
+          script: |
+            set -e
+            cd /opt/e-ncf
+
+            echo "== Backup de la BD antes de actualizar =="
+            # Carga las variables del .env del servidor para el pg_dump
+            set -a; . /opt/e-ncf/.env; set +a
+            docker exec encf-postgres pg_dump -U "$DB_USER" "$DB_NAME" \
+              | gzip > "/opt/e-ncf-data/backups/pre-deploy-$(date +%Y%m%d-%H%M%S).sql.gz" || \
+              echo "AVISO: backup pre-deploy omitido (¿primer despliegue o BD no lista?)"
+
+            echo "== Traer la nueva versión =="
+            git fetch --all --prune
+            git checkout produccion
+            git reset --hard origin/produccion
+
+            echo "== Rebuild y recreación de contenedores (datos persisten) =="
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+            echo "== Limpieza de imágenes viejas =="
+            docker image prune -f
+
+            echo "== Verificación de salud =="
+            sleep 12
+            for i in $(seq 1 10); do
+              if curl -sf http://localhost:3000/health > /dev/null; then
+                echo "OK: la app responde /health"
+                exit 0
+              fi
+              echo "Esperando a que la app levante... ($i/10)"
+              sleep 5
+            done
+            echo "ERROR: la app no respondió /health tras el deploy"
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml logs --tail 50 app
+            exit 1

@@ -71,6 +71,22 @@ class FacturaDetalleScreen extends StatelessWidget {
               label: const Text('Compartir'),
             )),
           ]),
+
+          // Anular button (only for approved invoices)
+          if (factura['estado_dgii'] == 'aprobado') ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _anular(context),
+                icon: const Icon(Icons.cancel_outlined, size: 18, color: AppColors.danger),
+                label: const Text('Anular factura', style: TextStyle(color: AppColors.danger)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.danger),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -140,6 +156,63 @@ class FacturaDetalleScreen extends StatelessWidget {
     Share.share(
       'Factura $ncf\nReceptor: ${payload['nombre_receptor']}\nTotal: RD\$ ${_fmt(payload['monto_total'])}\nVerificar: https://dgii.gov.do/ConsultaNCF',
     );
+  }
+
+  Future<void> _anular(BuildContext context) async {
+    final motivoController = TextEditingController();
+    final confirm = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Anular esta factura?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Esta acción no se puede deshacer. El número de comprobante no será liberado.',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: motivoController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Motivo de anulación',
+                hintText: 'Escriba el motivo...',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, motivoController.text),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+            child: const Text('Anular'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != null && confirm.isNotEmpty && context.mounted) {
+      try {
+        await apiClient.dio.post(
+          ApiConfig.facturaAnular(factura['id']),
+          data: {'motivo': confirm},
+        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Factura anulada'), backgroundColor: AppColors.success),
+          );
+          Navigator.pop(context);
+        }
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error al anular'), backgroundColor: AppColors.danger),
+          );
+        }
+      }
+    }
   }
 
   String _fmt(dynamic v) {

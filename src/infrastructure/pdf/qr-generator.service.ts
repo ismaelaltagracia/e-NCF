@@ -49,15 +49,18 @@ export class QrGeneratorService implements IQrGeneratorService {
 
   /**
    * Construye la URL de verificación DGII con los parámetros del comprobante.
+   * Incluye FechaEmision y CodigoSeguridad conforme al estándar de representación
+   * impresa de la DGII. Los valores se codifican para URL.
    */
   private buildPayload(data: QrPayload): string {
-    return (
-      `${data.url_dgii}?` +
-      `RncEmisor=${data.rnc_emisor}&` +
-      `RncComprador=${data.rnc_receptor}&` +
-      `ENCF=${data.encf}&` +
-      `FechaEmision=&` +
-      `MontoTotal=${data.monto_total}`
-    );
+    const params = new URLSearchParams({
+      RncEmisor: data.rnc_emisor,
+      RncComprador: data.rnc_receptor,
+      ENCF: data.encf,
+      FechaEmision: data.fecha_emision,
+      MontoTotal: data.monto_total,
+      CodigoSeguridad: data.codigo_seguridad,
+    });
+    return `${data.url_dgii}?${params.toString()}`;
   }
 }
