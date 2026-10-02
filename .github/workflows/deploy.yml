@@ -33,8 +33,10 @@ jobs:
             cd /opt/e-ncf
 
             echo "== Backup de la BD antes de actualizar =="
-            # Carga las variables del .env del servidor para el pg_dump
-            set -a; . /opt/e-ncf/.env; set +a
+            # Lee DB_USER/DB_NAME del .env SIN usar `source` (evita que caracteres
+            # especiales del .env rompan el script). grep + sed para quitar comillas.
+            DB_USER=$(grep -E '^DB_USER=' /opt/e-ncf/.env | head -1 | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//')
+            DB_NAME=$(grep -E '^DB_NAME=' /opt/e-ncf/.env | head -1 | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//')
             docker exec encf-postgres pg_dump -U "$DB_USER" "$DB_NAME" \
               | gzip > "/opt/e-ncf-data/backups/pre-deploy-$(date +%Y%m%d-%H%M%S).sql.gz" || \
               echo "AVISO: backup pre-deploy omitido (¿primer despliegue o BD no lista?)"
