@@ -60,13 +60,14 @@ echo "==> Preparando directorios de certificados ..."
 mkdir -p "${LE_DIR}" "${WEBROOT}"
 
 # --- Paso 4: certificado temporal autofirmado ------------------------------
+# Usamos el openssl del host (Debian lo trae) para no depender del entrypoint
+# de la imagen certbot. Esto permite que Nginx levante su bloque 443.
 echo "==> Creando certificado temporal autofirmado para que Nginx arranque ..."
 mkdir -p "${LIVE_PATH}"
-docker run --rm -v "${LE_DIR}:/etc/letsencrypt" certbot/certbot \
-  sh -c "openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
-    -keyout '/etc/letsencrypt/live/${PRIMARY}/privkey.pem' \
-    -out '/etc/letsencrypt/live/${PRIMARY}/fullchain.pem' \
-    -subj '/CN=${PRIMARY}'" >/dev/null 2>&1
+openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+  -keyout "${LIVE_PATH}/privkey.pem" \
+  -out "${LIVE_PATH}/fullchain.pem" \
+  -subj "/CN=${PRIMARY}"
 
 # --- Paso 5: aplicar .env nuevo y levantar/recrear Nginx -------------------
 echo "==> Recreando backend (nuevo .env) y Nginx ..."
@@ -77,10 +78,9 @@ sleep 5
 
 # --- Paso 6: borrar temporal y pedir el certificado real -------------------
 echo "==> Borrando certificado temporal ..."
-docker run --rm -v "${LE_DIR}:/etc/letsencrypt" certbot/certbot \
-  sh -c "rm -rf /etc/letsencrypt/live/${PRIMARY} \
-    /etc/letsencrypt/archive/${PRIMARY} \
-    /etc/letsencrypt/renewal/${PRIMARY}.conf" >/dev/null 2>&1 || true
+rm -rf "${LE_DIR}/live/${PRIMARY}" \
+  "${LE_DIR}/archive/${PRIMARY}" \
+  "${LE_DIR}/renewal/${PRIMARY}.conf" 2>/dev/null || true
 
 domain_args=""
 for d in "${DOMAINS[@]}"; do domain_args="${domain_args} -d ${d}"; done
