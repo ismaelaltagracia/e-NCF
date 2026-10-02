@@ -42,8 +42,10 @@ jobs:
               echo "AVISO: backup pre-deploy omitido (¿primer despliegue o BD no lista?)"
 
             echo "== Traer la nueva versión =="
-            git fetch --all --prune
-            git checkout produccion
+            git fetch origin produccion --prune
+            # -B crea o reposiciona la rama local 'produccion' sobre origin/produccion,
+            # aunque el servidor estuviera en otra rama (p.ej. 'inicio').
+            git checkout -B produccion origin/produccion
             git reset --hard origin/produccion
 
             echo "== Rebuild y recreación de contenedores (datos persisten) =="
