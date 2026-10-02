@@ -89,6 +89,9 @@ cd /opt/e-ncf
 mkdir -p keys
 openssl genrsa -out keys/private.pem 2048
 openssl rsa -in keys/private.pem -pubout -out keys/public.pem
+# El contenedor corre como UID 1001 (usuario 'nestjs'). Sin este chown el backend
+# no puede leer private.pem (EACCES) al firmar los JWT y el login devuelve 500.
+sudo chown -R 1001:1001 keys
 
 # Valores para el .env:
 openssl rand -hex 32   # ENCRYPTION_KEY (debe ser hex de 64 chars)

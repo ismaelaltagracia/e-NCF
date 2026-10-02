@@ -103,6 +103,12 @@ if [ ! -f "keys/private.pem" ]; then
     openssl rsa -in keys/private.pem -pubout -out keys/public.pem 2>/dev/null
     echo "  ✓ JWT keys generadas"
 fi
+# El contenedor corre como UID 1001 (usuario 'nestjs' del Dockerfile) y las keys
+# se montan en modo solo-lectura (./keys:/app/keys:ro). openssl crea private.pem
+# con permisos 0600 propiedad del usuario del host (p. ej. UID 1000), lo que
+# provoca "EACCES: permission denied, open './keys/private.pem'" al firmar los
+# JWT. Ajustamos el propietario al UID del contenedor para evitarlo.
+chown -R 1001:1001 keys 2>/dev/null || sudo chown -R 1001:1001 keys
 
 # Crear .env
 cat > .env << EOF
