@@ -71,6 +71,7 @@ cp .env.example .env && nano .env     # NODE_ENV=production, DGII_AMBIENTE=produ
 mkdir -p keys
 openssl genrsa -out keys/private.pem 2048
 openssl rsa -in keys/private.pem -pubout -out keys/public.pem
+sudo chown -R 1001:1001 keys     # el contenedor corre como UID 1001; sin esto el login da 500 (EACCES en private.pem)
 # Primer arranque manual (los siguientes serán automáticos)
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
