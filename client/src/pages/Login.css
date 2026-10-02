@@ -268,8 +268,30 @@
   border: 1px solid #fecaca;
 }
 
+.login-form .form-success {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  border: 1px solid #a7f3d0;
+}
+
 .login-form .form-submit {
   margin-top: 0.5rem;
+}
+
+/* Enlace que se muestra con estilo de botón primario (p. ej. "Volver al login"). */
+.login-form .btn-block-link {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  line-height: 1.2;
+}
+
+.login-forgot {
+  margin-bottom: 0.75rem;
 }
 
 .login-form .btn-primary {

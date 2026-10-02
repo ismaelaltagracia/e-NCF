@@ -46,6 +46,20 @@ const envSchema = z.object({
   SUPERADMIN_EMAIL: z.string().email().optional(),
   SUPERADMIN_PASSWORD: z.string().min(8).optional(),
   SUPERADMIN_NOMBRE: z.string().optional(),
+
+  // Email / SMTP (opcional: si SMTP_HOST está vacío, los correos se simulan).
+  SMTP_HOST: z.string().optional().default(''),
+  SMTP_PORT: z.coerce.number().int().positive().optional().default(587),
+  SMTP_USER: z.string().optional().default(''),
+  SMTP_PASSWORD: z.string().optional().default(''),
+  SMTP_FROM: z.string().optional().default('no-reply@e-ncf.do'),
+
+  // URL pública del frontend, usada para construir el enlace de recuperación de
+  // contraseña que viaja en el email. Debe apuntar a la raíz de la SPA.
+  FRONTEND_URL: z.string().optional().default('http://localhost:5173'),
+
+  // Vigencia del token de recuperación de contraseña, en minutos.
+  PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().positive().optional().default(60),
 });
 
 export type ValidatedEnv = z.infer<typeof envSchema>;

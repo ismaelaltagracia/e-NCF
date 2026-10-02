@@ -21,6 +21,7 @@ import { Contador } from './entities/contador.entity.js';
 import { ContadorEmpresa } from './entities/contador-empresa.entity.js';
 import { FacturaContador } from './entities/factura-contador.entity.js';
 import { ContadorUsuario } from './entities/contador-usuario.entity.js';
+import { PasswordResetToken } from './entities/password-reset-token.entity.js';
 
 const entities = [
   Plan,
@@ -28,6 +29,7 @@ const entities = [
   Usuario,
   SuperAdmin,
   RefreshToken,
+  PasswordResetToken,
   ApiKey,
   FacturaElectronica,
   CatalogoItem,

@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Onboarding from './pages/Onboarding';
 import Planes from './pages/Planes';
 import Configuracion from './pages/Configuracion';
@@ -42,6 +44,8 @@ function App() {
         <Route index element={<Navigate to={isAuthenticated ? '/dashboard' : '/inicio'} replace />} />
         <Route path="inicio" element={<Landing />} />
         <Route path="login" element={<Login />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password" element={<ResetPassword />} />
         <Route path="planes" element={<Planes />} />
         <Route path="documentacion" element={<Documentacion />} />
         <Route path="registro" element={<Onboarding />} />

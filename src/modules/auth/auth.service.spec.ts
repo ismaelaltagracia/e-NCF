@@ -15,9 +15,12 @@ import { AuthService } from './auth.service.js';
 import { Usuario } from '../../database/entities/usuario.entity.js';
 import { Empresa } from '../../database/entities/empresa.entity.js';
 import { RefreshToken } from '../../database/entities/refresh-token.entity.js';
+import { PasswordResetToken } from '../../database/entities/password-reset-token.entity.js';
 import { SuperAdmin } from '../../database/entities/super-admin.entity.js';
 import { EstadoEmpresa, EstadoToken, RolUsuario } from '../../database/enums.js';
 import { SECRETS_PROVIDER } from '../../infrastructure/secrets/secrets.interface.js';
+import { EMAIL_SERVICE } from '../../infrastructure/email/email.interface.js';
+import { ConfigService } from '@nestjs/config';
 
 // Generate RSA keys for testing
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
@@ -36,7 +39,9 @@ describe('AuthService', () => {
   let service: AuthService;
   let usuarioRepo: jest.Mocked<Partial<Repository<Usuario>>>;
   let refreshTokenRepo: jest.Mocked<Partial<Repository<RefreshToken>>>;
+  let passwordResetTokenRepo: jest.Mocked<Partial<Repository<PasswordResetToken>>>;
   let superAdminRepo: jest.Mocked<Partial<Repository<SuperAdmin>>>;
+  let emailService: { send: jest.Mock; isConfigured: jest.Mock };
 
   const mockEmpresa: Partial<Empresa> = {
     id: 'empresa-uuid-1',
@@ -81,11 +86,24 @@ describe('AuthService', () => {
       findOne: jest.fn(),
       create: jest.fn().mockImplementation((entity) => entity as RefreshToken),
       save: jest.fn().mockImplementation((entity) => Promise.resolve(entity)),
+      update: jest.fn().mockResolvedValue({ affected: 0 }),
+    };
+
+    passwordResetTokenRepo = {
+      findOne: jest.fn(),
+      create: jest.fn().mockImplementation((entity) => entity as PasswordResetToken),
+      save: jest.fn().mockImplementation((entity) => Promise.resolve(entity)),
+      update: jest.fn().mockResolvedValue({ affected: 0 }),
     };
 
     superAdminRepo = {
       findOne: jest.fn(),
       save: jest.fn().mockImplementation((entity) => Promise.resolve(entity)),
+    };
+
+    emailService = {
+      send: jest.fn().mockResolvedValue({ success: true, messageId: 'test' }),
+      isConfigured: jest.fn().mockReturnValue(false),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -104,12 +122,30 @@ describe('AuthService', () => {
           useValue: refreshTokenRepo,
         },
         {
+          provide: getRepositoryToken(PasswordResetToken),
+          useValue: passwordResetTokenRepo,
+        },
+        {
           provide: getRepositoryToken(SuperAdmin),
           useValue: superAdminRepo,
         },
         {
           provide: SECRETS_PROVIDER,
           useValue: mockSecretsProvider,
+        },
+        {
+          provide: EMAIL_SERVICE,
+          useValue: emailService,
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string, def?: unknown) => {
+              if (key === 'PASSWORD_RESET_TTL_MINUTES') return 60;
+              if (key === 'FRONTEND_URL') return 'http://localhost:5173';
+              return def;
+            }),
+          },
         },
       ],
     }).compile();
@@ -507,6 +543,141 @@ describe('AuthService', () => {
       );
 
       await expect(service.validateAccessToken(token)).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('changePassword', () => {
+    const userCtx = {
+      tipo: 'usuario' as const,
+      empresa_id: 'empresa-uuid-1',
+      rnc: '101234567',
+      usuario_id: 'user-uuid-1',
+      rol: 'admin' as const,
+    };
+
+    it('cambia la contraseña del usuario cuando la actual es correcta', async () => {
+      usuarioRepo.findOne!.mockResolvedValue({ ...mockUsuario });
+
+      await service.changePassword(userCtx, 'SecurePass123!', 'NuevaPass123!');
+
+      expect(usuarioRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ password_hash: expect.any(String) }),
+      );
+      // Revoca refresh tokens activos del usuario
+      expect(refreshTokenRepo.update).toHaveBeenCalledWith(
+        expect.objectContaining({ usuario_id: 'user-uuid-1', estado: EstadoToken.ACTIVO }),
+        { estado: EstadoToken.REVOCADO },
+      );
+    });
+
+    it('rechaza si la contraseña actual es incorrecta', async () => {
+      usuarioRepo.findOne!.mockResolvedValue({ ...mockUsuario });
+
+      await expect(
+        service.changePassword(userCtx, 'ContraseñaErrónea', 'NuevaPass123!'),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(usuarioRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('cambia la contraseña de un super admin', async () => {
+      const superCtx = {
+        tipo: 'usuario' as const,
+        empresa_id: '',
+        rnc: '',
+        usuario_id: 'super-admin-uuid-1',
+        rol: 'super_admin' as const,
+      };
+      superAdminRepo.findOne!.mockResolvedValue({ ...mockSuperAdmin });
+
+      await service.changePassword(superCtx, 'SecurePass123!', 'NuevaPass123!');
+
+      expect(superAdminRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ password_hash: expect.any(String) }),
+      );
+    });
+  });
+
+  describe('forgotPassword', () => {
+    it('genera token y envía email cuando el usuario existe', async () => {
+      usuarioRepo.findOne!.mockResolvedValue({ ...mockUsuario });
+
+      await service.forgotPassword('user@test.com');
+
+      expect(passwordResetTokenRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ usuario_id: 'user-uuid-1', usado: false }),
+      );
+      expect(emailService.send).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'user@test.com' }),
+      );
+    });
+
+    it('no revela si el email no existe (no envía email, no lanza)', async () => {
+      usuarioRepo.findOne!.mockResolvedValue(null);
+      superAdminRepo.findOne!.mockResolvedValue(null);
+
+      await expect(service.forgotPassword('noexiste@test.com')).resolves.toBeUndefined();
+      expect(passwordResetTokenRepo.save).not.toHaveBeenCalled();
+      expect(emailService.send).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('restablece la contraseña con un token válido y lo marca usado', async () => {
+      const rawToken = 'reset-token-123';
+      const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+      const resetToken: Partial<PasswordResetToken> = {
+        id: 'prt-1',
+        usuario_id: 'user-uuid-1',
+        super_admin_id: null,
+        token_hash: tokenHash,
+        usado: false,
+        expira_en: new Date(Date.now() + 60 * 60 * 1000),
+      };
+      passwordResetTokenRepo.findOne!.mockResolvedValue(resetToken as PasswordResetToken);
+      usuarioRepo.findOne!.mockResolvedValue({ ...mockUsuario });
+
+      await service.resetPassword(rawToken, 'NuevaPass123!');
+
+      expect(usuarioRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ password_hash: expect.any(String), intentos_fallidos: 0 }),
+      );
+      expect(passwordResetTokenRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ usado: true }),
+      );
+    });
+
+    it('rechaza un token expirado', async () => {
+      const rawToken = 'reset-token-exp';
+      const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+      passwordResetTokenRepo.findOne!.mockResolvedValue({
+        id: 'prt-2',
+        usuario_id: 'user-uuid-1',
+        super_admin_id: null,
+        token_hash: tokenHash,
+        usado: false,
+        expira_en: new Date(Date.now() - 1000),
+      } as PasswordResetToken);
+
+      await expect(service.resetPassword(rawToken, 'NuevaPass123!')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('rechaza un token ya usado', async () => {
+      const rawToken = 'reset-token-used';
+      const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+      passwordResetTokenRepo.findOne!.mockResolvedValue({
+        id: 'prt-3',
+        usuario_id: 'user-uuid-1',
+        super_admin_id: null,
+        token_hash: tokenHash,
+        usado: true,
+        expira_en: new Date(Date.now() + 60 * 60 * 1000),
+      } as PasswordResetToken);
+
+      await expect(service.resetPassword(rawToken, 'NuevaPass123!')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });

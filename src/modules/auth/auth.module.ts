@@ -9,13 +9,21 @@ import { RolesGuard, ScopesGuard } from '../../common/guards/index.js';
 import { Usuario } from '../../database/entities/usuario.entity.js';
 import { Empresa } from '../../database/entities/empresa.entity.js';
 import { RefreshToken } from '../../database/entities/refresh-token.entity.js';
+import { PasswordResetToken } from '../../database/entities/password-reset-token.entity.js';
 import { SuperAdmin } from '../../database/entities/super-admin.entity.js';
 import { ApiKey } from '../../database/entities/api-key.entity.js';
 import { InfrastructureModule } from '../../infrastructure/infrastructure.module.js';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Usuario, Empresa, RefreshToken, SuperAdmin, ApiKey]),
+    TypeOrmModule.forFeature([
+      Usuario,
+      Empresa,
+      RefreshToken,
+      PasswordResetToken,
+      SuperAdmin,
+      ApiKey,
+    ]),
     InfrastructureModule,
   ],
   controllers: [AuthController],

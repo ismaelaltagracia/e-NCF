@@ -7,18 +7,22 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { createHash, randomUUID } from 'crypto';
 
+import { ConfigService } from '@nestjs/config';
 import { Usuario } from '../../database/entities/usuario.entity.js';
 import { RefreshToken } from '../../database/entities/refresh-token.entity.js';
+import { PasswordResetToken } from '../../database/entities/password-reset-token.entity.js';
 import { SuperAdmin } from '../../database/entities/super-admin.entity.js';
 import { Empresa } from '../../database/entities/empresa.entity.js';
 import { EstadoEmpresa, EstadoToken } from '../../database/enums.js';
 import * as SecretsInterface from '../../infrastructure/secrets/secrets.interface.js';
 import type { ISecretsProvider } from '../../infrastructure/secrets/secrets.interface.js';
+import { EMAIL_SERVICE } from '../../infrastructure/email/email.interface.js';
+import type { IEmailService } from '../../infrastructure/email/email.interface.js';
 import type { TokenPair } from './interfaces/token-pair.interface.js';
 import type { RequestContext } from '../../common/interfaces/request-context.interface.js';
 
@@ -27,6 +31,7 @@ const REFRESH_TOKEN_TTL_DAYS = 7;
 const LOCKOUT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 const MAX_FAILED_ATTEMPTS = 5;
+const BCRYPT_COST = 12;
 
 @Injectable()
 export class AuthService {
@@ -37,10 +42,15 @@ export class AuthService {
     private readonly empresaRepo: Repository<Empresa>,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepo: Repository<RefreshToken>,
+    @InjectRepository(PasswordResetToken)
+    private readonly passwordResetTokenRepo: Repository<PasswordResetToken>,
     @InjectRepository(SuperAdmin)
     private readonly superAdminRepo: Repository<SuperAdmin>,
     @Inject(SecretsInterface.SECRETS_PROVIDER)
     private readonly secretsProvider: ISecretsProvider,
+    @Inject(EMAIL_SERVICE)
+    private readonly emailService: IEmailService,
+    private readonly configService: ConfigService,
   ) {}
 
   async login(email: string, password: string): Promise<TokenPair> {
@@ -391,5 +401,196 @@ export class AuthService {
 
   private hashToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Gestión de contraseña (cambio por elección y recuperación por email)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Cambia la contraseña del usuario autenticado (usuario de empresa o super
+   * admin), verificando primero la contraseña actual. Al cambiarla, revoca todos
+   * los refresh tokens activos del usuario para cerrar otras sesiones.
+   */
+  async changePassword(
+    user: RequestContext,
+    passwordActual: string,
+    passwordNueva: string,
+  ): Promise<void> {
+    if (!user.usuario_id) {
+      throw new UnauthorizedException('Sesión inválida');
+    }
+
+    if (user.rol === 'super_admin') {
+      const superAdmin = await this.superAdminRepo.findOne({ where: { id: user.usuario_id } });
+      if (!superAdmin || !superAdmin.activo) {
+        throw new UnauthorizedException('Sesión inválida');
+      }
+
+      const valid = await bcrypt.compare(passwordActual, superAdmin.password_hash);
+      if (!valid) {
+        throw new UnauthorizedException('La contraseña actual es incorrecta');
+      }
+
+      superAdmin.password_hash = await bcrypt.hash(passwordNueva, BCRYPT_COST);
+      await this.superAdminRepo.save(superAdmin);
+      await this.revokeAllRefreshTokensForSuperAdmin();
+      return;
+    }
+
+    const usuario = await this.usuarioRepo.findOne({ where: { id: user.usuario_id } });
+    if (!usuario || !usuario.activo) {
+      throw new UnauthorizedException('Sesión inválida');
+    }
+
+    const valid = await bcrypt.compare(passwordActual, usuario.password_hash);
+    if (!valid) {
+      throw new UnauthorizedException('La contraseña actual es incorrecta');
+    }
+
+    usuario.password_hash = await bcrypt.hash(passwordNueva, BCRYPT_COST);
+    await this.usuarioRepo.save(usuario);
+    await this.revokeAllRefreshTokensForUsuario(usuario.id);
+  }
+
+  /**
+   * Inicia la recuperación de contraseña. Siempre resuelve sin error (y el
+   * controller responde 200) aunque el email no exista, para no revelar qué
+   * cuentas están registradas. Si existe, genera un token single-use, guarda su
+   * hash y envía el enlace por email.
+   */
+  async forgotPassword(email: string): Promise<void> {
+    const usuario = await this.usuarioRepo.findOne({ where: { email } });
+    const superAdmin = usuario ? null : await this.superAdminRepo.findOne({ where: { email } });
+
+    const cuenta = usuario ?? superAdmin;
+    if (!cuenta || !cuenta.activo) {
+      // No revelamos si la cuenta existe o está inactiva.
+      return;
+    }
+
+    const ttlMinutes = this.configService.get<number>('PASSWORD_RESET_TTL_MINUTES', 60);
+    const rawToken = randomUUID();
+    const tokenHash = this.hashToken(rawToken);
+    const expiraEn = new Date(Date.now() + ttlMinutes * 60 * 1000);
+
+    const resetToken = this.passwordResetTokenRepo.create({
+      usuario_id: usuario ? usuario.id : null,
+      super_admin_id: superAdmin ? superAdmin.id : null,
+      token_hash: tokenHash,
+      expira_en: expiraEn,
+      usado: false,
+    });
+    await this.passwordResetTokenRepo.save(resetToken);
+
+    const frontendUrl = this.configService
+      .get<string>('FRONTEND_URL', 'http://localhost:5173')
+      .replace(/\/+$/, '');
+    // La SPA se sirve bajo el basename "/app" (ver client main.tsx BrowserRouter).
+    const resetLink = `${frontendUrl}/app/reset-password?token=${encodeURIComponent(rawToken)}`;
+
+    await this.emailService.send({
+      to: email,
+      subject: 'Recuperación de contraseña — e-NCF',
+      html: this.buildResetEmailHtml(cuenta.nombre, resetLink, ttlMinutes),
+    });
+  }
+
+  /**
+   * Completa la recuperación: valida el token (existe, no usado, no expirado),
+   * establece la nueva contraseña, marca el token como usado, revoca refresh
+   * tokens activos y limpia el bloqueo por intentos fallidos.
+   */
+  async resetPassword(rawToken: string, passwordNueva: string): Promise<void> {
+    const tokenHash = this.hashToken(rawToken);
+    const resetToken = await this.passwordResetTokenRepo.findOne({
+      where: { token_hash: tokenHash },
+    });
+
+    if (!resetToken || resetToken.usado || resetToken.expira_en.getTime() < Date.now()) {
+      throw new UnauthorizedException('El enlace de recuperación es inválido o ha expirado');
+    }
+
+    const newHash = await bcrypt.hash(passwordNueva, BCRYPT_COST);
+
+    if (resetToken.super_admin_id) {
+      const superAdmin = await this.superAdminRepo.findOne({
+        where: { id: resetToken.super_admin_id },
+      });
+      if (!superAdmin) {
+        throw new UnauthorizedException('El enlace de recuperación es inválido o ha expirado');
+      }
+      superAdmin.password_hash = newHash;
+      superAdmin.intentos_fallidos = 0;
+      superAdmin.bloqueado_hasta = null;
+      superAdmin.primer_intento_fallido = null;
+      await this.superAdminRepo.save(superAdmin);
+      await this.revokeAllRefreshTokensForSuperAdmin();
+    } else if (resetToken.usuario_id) {
+      const usuario = await this.usuarioRepo.findOne({ where: { id: resetToken.usuario_id } });
+      if (!usuario) {
+        throw new UnauthorizedException('El enlace de recuperación es inválido o ha expirado');
+      }
+      usuario.password_hash = newHash;
+      usuario.intentos_fallidos = 0;
+      usuario.bloqueado_hasta = null;
+      usuario.primer_intento_fallido = null;
+      await this.usuarioRepo.save(usuario);
+      await this.revokeAllRefreshTokensForUsuario(usuario.id);
+    } else {
+      throw new UnauthorizedException('El enlace de recuperación es inválido o ha expirado');
+    }
+
+    resetToken.usado = true;
+    await this.passwordResetTokenRepo.save(resetToken);
+
+    // Invalida cualquier otro token de reset pendiente de la misma cuenta.
+    await this.passwordResetTokenRepo.update(
+      resetToken.usuario_id
+        ? { usuario_id: resetToken.usuario_id, usado: false }
+        : { super_admin_id: resetToken.super_admin_id!, usado: false },
+      { usado: true },
+    );
+  }
+
+  private async revokeAllRefreshTokensForUsuario(usuarioId: string): Promise<void> {
+    await this.refreshTokenRepo.update(
+      { usuario_id: usuarioId, estado: EstadoToken.ACTIVO },
+      { estado: EstadoToken.REVOCADO },
+    );
+  }
+
+  /**
+   * Los refresh tokens de super admin tienen usuario_id y empresa_id en null.
+   * Revocamos todos los activos sin usuario asociado.
+   */
+  private async revokeAllRefreshTokensForSuperAdmin(): Promise<void> {
+    await this.refreshTokenRepo.update(
+      { usuario_id: IsNull(), estado: EstadoToken.ACTIVO },
+      { estado: EstadoToken.REVOCADO },
+    );
+  }
+
+  private buildResetEmailHtml(nombre: string, resetLink: string, ttlMinutes: number): string {
+    return `
+      <div style="font-family: Arial, Helvetica, sans-serif; color: #1a3a5c; max-width: 520px; margin: 0 auto;">
+        <h2 style="color: #1a3a5c;">Recuperación de contraseña</h2>
+        <p>Hola ${nombre},</p>
+        <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en e-NCF.
+        Si fuiste tú, haz clic en el siguiente botón para elegir una nueva contraseña:</p>
+        <p style="text-align: center; margin: 28px 0;">
+          <a href="${resetLink}"
+             style="background: #1a3a5c; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block; font-weight: 600;">
+            Restablecer contraseña
+          </a>
+        </p>
+        <p>O copia y pega este enlace en tu navegador:</p>
+        <p style="word-break: break-all; color: #4a6b8a;">${resetLink}</p>
+        <p style="color: #6b7c8f; font-size: 13px;">
+          Este enlace vence en ${ttlMinutes} minutos y solo puede usarse una vez.
+          Si no solicitaste este cambio, puedes ignorar este correo; tu contraseña no cambiará.
+        </p>
+      </div>
+    `;
   }
 }

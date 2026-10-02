@@ -5,6 +5,7 @@ import { Empresa } from './entities/empresa.entity.js';
 import { Usuario } from './entities/usuario.entity.js';
 import { SuperAdmin } from './entities/super-admin.entity.js';
 import { RefreshToken } from './entities/refresh-token.entity.js';
+import { PasswordResetToken } from './entities/password-reset-token.entity.js';
 import { ApiKey } from './entities/api-key.entity.js';
 import { FacturaElectronica } from './entities/factura-electronica.entity.js';
 import { CatalogoItem } from './entities/catalogo-item.entity.js';
@@ -28,6 +29,7 @@ export default new DataSource({
     Usuario,
     SuperAdmin,
     RefreshToken,
+    PasswordResetToken,
     ApiKey,
     FacturaElectronica,
     CatalogoItem,

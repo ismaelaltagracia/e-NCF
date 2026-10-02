@@ -285,22 +285,24 @@ function CambiarPassword() {
     setSuccess('');
 
     try {
-      const res = await fetch('/api/v1/users/me/password', {
-        method: 'PATCH',
+      const res = await fetch('/api/v1/auth/change-password', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          current_password: values.current_password,
-          new_password: values.new_password,
+          password_actual: values.current_password,
+          password_nueva: values.new_password,
         }),
       });
 
       if (!res.ok) {
-        const body = await res.json();
+        const body = await res.json().catch(() => ({}));
         if (res.status === 401 || /actual|current|incorrecta/i.test(body.message || '')) {
           setErrors({ current_password: 'Contraseña actual incorrecta' });
+        } else if (res.status === 400 && Array.isArray(body.errors) && body.errors.length > 0) {
+          setErrors({ new_password: body.errors[0].message });
         } else {
           setGeneralError(body.message || 'Error al cambiar la contraseña');
         }

@@ -191,6 +191,9 @@ function Login() {
           </form>
 
           <div className="login-card-footer">
+            <p className="login-forgot">
+              <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
+            </p>
             <p>¿No tienes cuenta? <Link to="/registro">Registra tu empresa</Link></p>
             <div className="login-card-links">
               <Link to="/planes">Ver Planes</Link>
