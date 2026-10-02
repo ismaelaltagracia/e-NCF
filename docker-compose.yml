@@ -70,9 +70,9 @@ services:
       - encf-network
 
   minio:
-    # MinIO retiró sus imágenes de Docker Hub (sep 2026). Se usa el mirror oficial
-    # en quay.io con una etiqueta fija (última release community conocida).
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    # MinIO retiró minio/minio de Docker Hub (sep 2026) y quay exige auth.
+    # Se usa la imagen pública de Bitnami (legacy) con tag fijo.
+    image: bitnamilegacy/minio:2025.7.23
     container_name: encf-minio
     restart: unless-stopped
     ports:
@@ -81,15 +81,18 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-encf_minio_access}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-encf_minio_secret}
-    command: server /data --console-address ":9001"
+      # Bitnami: puerto de API y consola, y desactivar chequeo de versión saliente.
+      MINIO_API_PORT_NUMBER: "9000"
+      MINIO_CONSOLE_PORT_NUMBER: "9001"
+      MINIO_SKIP_CLIENT: "yes"
     volumes:
-      - minio_data:/data
+      # La imagen de Bitnami guarda los datos en /bitnami/minio/data.
+      - minio_data:/bitnami/minio/data
     healthcheck:
-      # Healthcheck por el endpoint de salud nativo de MinIO (no depende de `mc`).
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
-      start_period: 10s
+      start_period: 20s
       retries: 5
     networks:
       - encf-network

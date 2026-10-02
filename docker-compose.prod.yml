@@ -64,7 +64,8 @@ services:
     # MinIO solo accesible internamente; la consola (9001) no se expone.
     ports: !override []
     volumes:
-      - /opt/e-ncf-data/minio:/data
+      # Bitnami MinIO guarda los datos en /bitnami/minio/data.
+      - /opt/e-ncf-data/minio:/bitnami/minio/data
     logging:
       driver: json-file
       options:
