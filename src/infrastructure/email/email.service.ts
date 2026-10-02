@@ -49,6 +49,12 @@ export class EmailService implements IEmailService {
   async send(options: SendEmailOptions): Promise<{ success: boolean; messageId?: string }> {
     if (!this.transporter) {
       this.logger.log(`[EMAIL SIMULADO] To: ${options.to} | Subject: ${options.subject}`);
+      // En modo simulado, extraemos los enlaces del HTML y los mostramos en el log
+      // para poder probar flujos como la recuperación de contraseña sin SMTP real.
+      const links = Array.from(options.html.matchAll(/href="([^"]+)"/g)).map((m) => m[1]);
+      for (const link of links) {
+        this.logger.log(`[EMAIL SIMULADO] Enlace: ${link}`);
+      }
       return { success: true, messageId: `simulated-${Date.now()}` };
     }
 
