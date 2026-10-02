@@ -51,6 +51,14 @@ jobs:
             echo "== Rebuild y recreación de contenedores (datos persisten) =="
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
+            echo "== Recargar Nginx (toma cambios de nginx/conf.d, que es un volumen) =="
+            # La config de Nginx se monta por volumen; `up -d` no reinicia el
+            # contenedor cuando solo cambia un archivo montado. Recargamos para
+            # que tome cambios (p. ej. redirects/proxy). Si no existe aún, se ignora.
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T nginx nginx -s reload 2>/dev/null \
+              || docker compose -f docker-compose.yml -f docker-compose.prod.yml restart nginx 2>/dev/null \
+              || echo "AVISO: Nginx aún no disponible (¿primer despliegue?)"
+
             echo "== Limpieza de imágenes viejas =="
             docker image prune -f
 
