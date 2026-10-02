@@ -18,12 +18,10 @@
 services:
   app:
     restart: always
-    # Publica el puerto del backend. El acceso externo lo controla el firewall (ufw)
-    # y, cuando se configure, Nginx como reverse proxy a 443.
-    # Nota: se usa !override para reemplazar la lista del compose base (evita el
-    # bind forzado a 127.0.0.1, que en Debian con systemd-resolved puede chocar).
-    ports: !override
-      - "${PORT:-3000}:3000"
+    # El backend NO se publica a internet: Nginx (abajo) es el único punto de
+    # entrada y hace proxy a app:3000 por la red interna de Docker.
+    # !override reemplaza la lista del compose base (que publicaba 3000:3000).
+    ports: !override []
     volumes:
       # Mismo bind mount de backups (solo lectura) + las llaves JWT/certs.
       - /opt/e-ncf-data/backups:/backups:ro
@@ -81,3 +79,51 @@ services:
       - /opt/e-ncf-data/backups:/backups
       - ./scripts/backup.sh:/scripts/backup.sh:ro
       - ./scripts/backup-entrypoint.sh:/scripts/backup-entrypoint.sh:ro
+
+  # ───────────────────────────────────────────────────────────────────────
+  # Reverse proxy + TLS. Único servicio expuesto a internet (80/443).
+  # ───────────────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: encf-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - /opt/e-ncf-data/letsencrypt:/etc/letsencrypt:ro
+      - /opt/e-ncf-data/certbot-www:/var/www/certbot:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    # Recarga la config cada 6h para tomar certificados renovados por certbot.
+    command: >-
+      /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
+    networks:
+      - encf-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Renovación automática del certificado Let's Encrypt. La emisión INICIAL se
+  # hace una sola vez con scripts/init-letsencrypt.sh (ver docs).
+  certbot:
+    image: certbot/certbot:latest
+    container_name: encf-certbot
+    restart: always
+    volumes:
+      - /opt/e-ncf-data/letsencrypt:/etc/letsencrypt
+      - /opt/e-ncf-data/certbot-www:/var/www/certbot
+    # Intenta renovar cada 12h; certbot solo renueva si falta < 30 días.
+    entrypoint: >-
+      /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
+    networks:
+      - encf-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
