@@ -70,7 +70,9 @@ services:
       - encf-network
 
   minio:
-    image: minio/minio:latest
+    # MinIO retiró sus imágenes de Docker Hub (sep 2026). Se usa el mirror oficial
+    # en quay.io con una etiqueta fija (última release community conocida).
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: encf-minio
     restart: unless-stopped
     ports:
@@ -83,7 +85,8 @@ services:
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      # Healthcheck por el endpoint de salud nativo de MinIO (no depende de `mc`).
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       start_period: 10s
