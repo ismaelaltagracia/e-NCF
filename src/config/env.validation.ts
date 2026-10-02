@@ -38,6 +38,9 @@ const envSchema = z.object({
 
   // CORS: lista separada por comas
   CORS_ORIGINS: z.string().optional().default(''),
+
+  // Fuerza synchronize del esquema (útil para primer arranque en BD vacía).
+  DB_SYNCHRONIZE: z.enum(['true', 'false']).optional().default('false'),
 });
 
 export type ValidatedEnv = z.infer<typeof envSchema>;

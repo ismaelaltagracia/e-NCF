@@ -49,13 +49,31 @@ export class RowLevelSecurity1700000000003 implements MigrationInterface {
     'refresh_tokens',
   ];
 
+  /**
+   * Devuelve true si la tabla existe en el esquema public.
+   * Hace la migración tolerante: algunas tablas pueden no existir aún según cómo
+   * se haya construido el esquema (migraciones parciales vs synchronize en dev).
+   */
+  private async tableExists(queryRunner: QueryRunner, table: string): Promise<boolean> {
+    const rows = await queryRunner.query(
+      `SELECT to_regclass('public.${table}') AS reg`,
+    );
+    return Array.isArray(rows) && rows[0] && rows[0].reg !== null;
+  }
+
   public async up(queryRunner: QueryRunner): Promise<void> {
     for (const table of this.tenantTables) {
+      if (!(await this.tableExists(queryRunner, table))) {
+        // La tabla no existe todavía; se omite sin romper la migración.
+        continue;
+      }
+
       // Habilitar RLS. No se usa FORCE para que el owner conserve acceso completo
       // (necesario para migraciones y mantenimiento).
       await queryRunner.query(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`);
 
-      // Política de aislamiento por tenant con modo compatibilidad.
+      // Política idempotente (se recrea si ya existía).
+      await queryRunner.query(`DROP POLICY IF EXISTS "tenant_isolation_${table}" ON "${table}"`);
       await queryRunner.query(`
         CREATE POLICY "tenant_isolation_${table}" ON "${table}"
         USING (
@@ -69,6 +87,9 @@ export class RowLevelSecurity1700000000003 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     for (const table of this.tenantTables) {
+      if (!(await this.tableExists(queryRunner, table))) {
+        continue;
+      }
       await queryRunner.query(`DROP POLICY IF EXISTS "tenant_isolation_${table}" ON "${table}"`);
       await queryRunner.query(`ALTER TABLE "${table}" DISABLE ROW LEVEL SECURITY`);
     }

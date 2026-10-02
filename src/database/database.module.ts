@@ -63,12 +63,17 @@ const entities = [
         password: config.get<string>('DB_PASSWORD', 'encf_password'),
         database: config.get<string>('DB_NAME', 'encf_db'),
         entities,
-        // synchronize SOLO en development/test. Cualquier otro valor (incluido
-        // production o uno inesperado) mantiene el esquema gestionado por migraciones.
-        synchronize: ['development', 'test'].includes(
-          config.get<string>('NODE_ENV', 'development'),
-        ),
-        migrationsRun: config.get<string>('NODE_ENV') === 'production',
+        // synchronize se activa en dev/test, o explícitamente con DB_SYNCHRONIZE=true.
+        // Útil para el primer arranque en una BD vacía (crea el esquema completo desde
+        // las entidades). Apágalo (DB_SYNCHRONIZE=false) tras el primer despliegue.
+        synchronize:
+          config.get<string>('DB_SYNCHRONIZE') === 'true' ||
+          ['development', 'test'].includes(config.get<string>('NODE_ENV', 'development')),
+        // Las migraciones corren en producción SALVO que synchronize esté forzado
+        // (evita que RLS/enum choquen con un esquema recién sincronizado).
+        migrationsRun:
+          config.get<string>('NODE_ENV') === 'production' &&
+          config.get<string>('DB_SYNCHRONIZE') !== 'true',
         migrations: ['dist/database/migrations/*.js'],
         logging: config.get<string>('NODE_ENV') === 'development',
       }),
