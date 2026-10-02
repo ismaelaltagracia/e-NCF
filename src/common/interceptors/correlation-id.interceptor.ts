@@ -1,5 +1,5 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
-import { Observable, tap } from 'rxjs';
+import { Observable } from 'rxjs';
 import { Request, Response } from 'express';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
@@ -30,19 +30,17 @@ export class CorrelationIdInterceptor implements NestInterceptor {
 
     response.setHeader(CORRELATION_ID_HEADER, correlationId);
 
+    // Envolvemos la SUSCRIPCIÓN (no solo la construcción) dentro del contexto de
+    // AsyncLocalStorage, para que el correlationId esté disponible durante toda la
+    // ejecución asíncrona del handler y en los interceptores posteriores (logging).
+    //
+    // Importante: hay UNA sola suscripción al stream de Nest y se devuelve ese mismo
+    // Observable. Antes se hacía un .subscribe() interno adicional sin handler de
+    // error, lo que duplicaba el stream y provocaba que los errores (p. ej.
+    // UnauthorizedException en el login) quedaran como "unhandled" en rxjs
+    // (reportUnhandledError), ensuciando los logs e incluso pudiendo tumbar el proceso.
     return new Observable((subscriber) => {
-      correlationStorage.run(correlationId, () => {
-        next
-          .handle()
-          .pipe(
-            tap({
-              next: (value) => subscriber.next(value),
-              error: (err) => subscriber.error(err),
-              complete: () => subscriber.complete(),
-            }),
-          )
-          .subscribe();
-      });
+      return correlationStorage.run(correlationId, () => next.handle().subscribe(subscriber));
     });
   }
 }

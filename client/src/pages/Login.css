@@ -212,6 +212,47 @@
   border-color: #dc3545;
 }
 
+.login-form .form-field .password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-form .form-field .password-input-wrapper input {
+  flex: 1;
+  width: 100%;
+  padding-right: 2.75rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.password-toggle:hover {
+  background: rgba(26, 58, 92, 0.08);
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid #1a3a5c;
+  outline-offset: 1px;
+}
+
 .login-form .field-error {
   font-size: 0.8rem;
   color: #dc3545;
