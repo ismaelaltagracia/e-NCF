@@ -11,6 +11,7 @@ interface LoginErrors {
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<LoginErrors>({});
   const [generalError, setGeneralError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -151,20 +152,32 @@ function Login() {
 
             <div className="form-field">
               <label htmlFor="login-password">Contraseña</label>
-              <input
-                id="login-password"
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setErrors((prev) => ({ ...prev, password: undefined }));
-                  setGeneralError('');
-                }}
-                placeholder="••••••••"
-                aria-invalid={!!errors.password}
-                aria-describedby={errors.password ? 'err-login-password' : undefined}
-                autoComplete="current-password"
-              />
+              <div className="password-input-wrapper">
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setErrors((prev) => ({ ...prev, password: undefined }));
+                    setGeneralError('');
+                  }}
+                  placeholder="••••••••"
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? 'err-login-password' : undefined}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  aria-pressed={showPassword}
+                  title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
               <span id="err-login-password" className="field-error" role="alert">
                 {errors.password || ''}
               </span>
