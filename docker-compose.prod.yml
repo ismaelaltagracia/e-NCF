@@ -18,9 +18,12 @@
 services:
   app:
     restart: always
-    # El backend se publica solo en localhost; Nginx hace el proxy a 443.
-    ports:
-      - "127.0.0.1:${PORT:-3000}:3000"
+    # Publica el puerto del backend. El acceso externo lo controla el firewall (ufw)
+    # y, cuando se configure, Nginx como reverse proxy a 443.
+    # Nota: se usa !override para reemplazar la lista del compose base (evita el
+    # bind forzado a 127.0.0.1, que en Debian con systemd-resolved puede chocar).
+    ports: !override
+      - "${PORT:-3000}:3000"
     volumes:
       # Mismo bind mount de backups (solo lectura) + las llaves JWT/certs.
       - /opt/e-ncf-data/backups:/backups:ro
