@@ -41,6 +41,11 @@ const envSchema = z.object({
 
   // Fuerza synchronize del esquema (útil para primer arranque en BD vacía).
   DB_SYNCHRONIZE: z.enum(['true', 'false']).optional().default('false'),
+
+  // Seed opcional del super admin inicial (lo consume la migración SeedSuperAdmin).
+  SUPERADMIN_EMAIL: z.string().email().optional(),
+  SUPERADMIN_PASSWORD: z.string().min(8).optional(),
+  SUPERADMIN_NOMBRE: z.string().optional(),
 });
 
 export type ValidatedEnv = z.infer<typeof envSchema>;

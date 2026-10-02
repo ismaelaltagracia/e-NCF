@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from './auth.service.js';
+import { SuperAdminSeedService } from './superadmin-seed.service.js';
 import { AuthController } from './auth.controller.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { ApiKeyGuard } from './guards/api-key.guard.js';
@@ -18,7 +19,7 @@ import { InfrastructureModule } from '../../infrastructure/infrastructure.module
     InfrastructureModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, ApiKeyGuard, RolesGuard, ScopesGuard],
+  providers: [AuthService, SuperAdminSeedService, JwtAuthGuard, ApiKeyGuard, RolesGuard, ScopesGuard],
   exports: [AuthService, JwtAuthGuard, ApiKeyGuard, RolesGuard, ScopesGuard],
 })
 export class AuthModule {}
