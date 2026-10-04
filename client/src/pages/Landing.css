@@ -373,7 +373,13 @@
 
 .pricing-card--api {
   background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
-  border-color: #4285f4;
+  border-color: #2563eb;
+}
+
+/* La tarjeta recomendada (más popular) siempre lleva borde negro, aunque
+   también sea un plan de API. Va después para ganar en precedencia. */
+.pricing-card.pricing-card--featured {
+  border-color: #0f1b2d;
 }
 
 .pricing-api-note {
@@ -401,7 +407,7 @@
   padding: 2rem 1.5rem;
   border-radius: 14px;
   background: #ffffff;
-  border: 1px solid #e5e7eb;
+  border: 2px solid #2563eb;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -417,8 +423,8 @@
 }
 
 .pricing-card--featured {
-  border-color: #2563eb;
-  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.12);
+  border-color: #0f1b2d;
+  box-shadow: 0 4px 20px rgba(15, 27, 45, 0.15);
 }
 
 .pricing-badge {
