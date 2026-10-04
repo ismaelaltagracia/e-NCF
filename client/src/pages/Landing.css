@@ -389,8 +389,12 @@
 
 .pricing-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  /* auto-fit + max de 320px evita columnas fantasma y que las tarjetas se
+     estiren demasiado; justify-content centra el conjunto cuando hay pocas. */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 320px));
   gap: 1.5rem;
+  justify-content: center;
+  align-items: stretch;
 }
 
 .pricing-card {
@@ -403,6 +407,13 @@
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  height: 100%;
+}
+
+/* El botón siempre queda al fondo, alineando el CTA entre tarjetas de
+   distinta altura (distinto número de features). */
+.pricing-card .pricing-btn {
+  margin-top: auto;
 }
 
 .pricing-card--featured {
@@ -650,6 +661,12 @@
   .landing-nav { display: none; }
   .features-grid { grid-template-columns: 1fr; }
   .audience-grid { grid-template-columns: 1fr; }
-  .pricing-grid { grid-template-columns: 1fr; }
   .faq-grid { grid-template-columns: 1fr; }
+  /* En móvil, las tarjetas de precio ocupan todo el ancho (sin el tope de 320px)
+     y se apilan en una columna centrada. */
+  .pricing-grid {
+    grid-template-columns: minmax(0, 360px);
+    justify-content: center;
+  }
+  .landing-pricing { padding: 3rem 1.25rem; }
 }
