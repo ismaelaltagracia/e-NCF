@@ -330,7 +330,7 @@ function Landing() {
           <div className="faq-grid">
             <div className="faq-item">
               <h4>¿Necesito un técnico para usar esto?</h4>
-              <p>No. La plataforma está diseñada para que cualquier persona pueda facturar. Si sabes enviar un email, sabes usar e-NCF.</p>
+              <p>No. La plataforma está diseñada para que cualquier persona pueda facturar. Si sabes enviar un email, sabes usar E-MITTE.</p>
             </div>
             <div className="faq-item">
               <h4>¿Qué necesito para empezar?</h4>

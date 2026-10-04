@@ -30,7 +30,7 @@ async function bootstrap(): Promise<void> {
 
   // Swagger / OpenAPI documentation
   const config = new DocumentBuilder()
-    .setTitle('e-NCF API Gateway')
+    .setTitle('E-MITTE API Gateway')
     .setDescription(
       'API Gateway REST para facturación electrónica (e-CF) de la DGII de República Dominicana. ' +
       'Gestiona el ciclo de vida completo de comprobantes fiscales electrónicos: ' +

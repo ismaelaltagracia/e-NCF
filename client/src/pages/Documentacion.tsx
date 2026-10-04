@@ -61,8 +61,8 @@ const ENDPOINTS = [
 function generatePostmanCollection(): string {
   const collection = {
     info: {
-      name: 'e-NCF API',
-      description: 'Colección de la API de facturación electrónica e-NCF',
+      name: 'E-MITTE API',
+      description: 'Colección de la API de facturación electrónica E-MITTE',
       schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
     },
     auth: {
@@ -131,7 +131,7 @@ function downloadPostmanCollection() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'e-NCF-API.postman_collection.json';
+  a.download = 'E-MITTE-API.postman_collection.json';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

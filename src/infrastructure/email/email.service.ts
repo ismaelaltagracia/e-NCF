@@ -24,7 +24,7 @@ export class EmailService implements IEmailService {
     const port = this.configService.get<number>('SMTP_PORT', 587);
     const user = this.configService.get<string>('SMTP_USER', '');
     const password = this.configService.get<string>('SMTP_PASSWORD', '');
-    this.fromAddress = this.configService.get<string>('SMTP_FROM', 'no-reply@e-ncf.do');
+    this.fromAddress = this.configService.get<string>('SMTP_FROM', 'no-reply@e-mitte.com');
 
     if (host) {
       this.transporter = nodemailer.createTransport({

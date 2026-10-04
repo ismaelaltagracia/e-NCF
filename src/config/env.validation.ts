@@ -52,7 +52,7 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().int().positive().optional().default(587),
   SMTP_USER: z.string().optional().default(''),
   SMTP_PASSWORD: z.string().optional().default(''),
-  SMTP_FROM: z.string().optional().default('no-reply@e-ncf.do'),
+  SMTP_FROM: z.string().optional().default('no-reply@e-mitte.com'),
 
   // URL pública del frontend, usada para construir el enlace de recuperación de
   // contraseña que viaja en el email. Debe apuntar a la raíz de la SPA.
